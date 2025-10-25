@@ -841,16 +841,23 @@ function showSearchResultsDropdown(results) {
     if (!dropdown) {
         dropdown = document.createElement('div');
         dropdown.id = 'searchResultsDropdown';
-        dropdown.style.position = 'absolute';
+        const isMobile = window.innerWidth <= 600;
+        dropdown.style.position = isMobile ? 'fixed' : 'absolute';
         dropdown.style.background = '#fff';
         dropdown.style.border = '1px solid #ddd';
-        dropdown.style.width = '100%';
-        dropdown.style.zIndex = '1000';
-        dropdown.style.maxHeight = '300px';
+        dropdown.style.width = isMobile ? '96vw' : '100%';
+        dropdown.style.left = isMobile ? '2vw' : '0';
+        dropdown.style.top = isMobile ? '70px' : '';
+        dropdown.style.zIndex = '2000';
+        dropdown.style.maxHeight = isMobile ? '60vh' : '300px';
         dropdown.style.overflowY = 'auto';
-        dropdown.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+        dropdown.style.boxShadow = '0 4px 16px rgba(0,0,0,0.12)';
         dropdown.style.direction = 'rtl';
-        document.querySelector('.search-box').appendChild(dropdown);
+        dropdown.style.borderRadius = isMobile ? '18px' : '8px';
+        dropdown.style.padding = isMobile ? '1rem 0.5rem' : '0';
+        dropdown.style.fontSize = isMobile ? '1.1rem' : '1rem';
+        dropdown.style.marginTop = isMobile ? '0' : '4px';
+        document.body.appendChild(dropdown);
     }
     dropdown.innerHTML = '';
     if (results.length === 0) {
@@ -930,6 +937,15 @@ function viewUserDetails(phone) {
             '<img src="' + user.images.front + '" style="width: 100%; border-radius: 12px; box-shadow: var(--shadow-md); cursor: pointer;" onclick="viewImage(\'' + user.images.front + '\')">' +
         '</div>';
     }
+
+    // صورة المستخدم أسفل التفاصيل
+    var userProfileImgHtml = '';
+    if (user.profileImg && user.profileImg.trim() !== '') {
+        userProfileImgHtml = '<div style="margin: 1.5rem auto 0; text-align: center;">' +
+            '<h3 style="color: var(--primary-color); margin-bottom: 0.5rem;">صورة المستخدم</h3>' +
+            '<img src="' + user.profileImg + '" alt="صورة المستخدم" style="max-width: 220px; border-radius: 12px; box-shadow: var(--shadow-md); cursor: pointer;" onclick="viewImage(\'' + user.profileImg + '\')">' +
+        '</div>';
+    }
     var isMobile = window.innerWidth <= 600;
     var adminEditBtn = '';
     if (currentUser.type === 'admin') {
@@ -961,6 +977,7 @@ function viewUserDetails(phone) {
             '</h3>' +
             '<div style="display: grid; gap: 1rem;">' + detailsHtml + '</div>' +
         '</div>' +
+        userProfileImgHtml +
         voteImageHtml +
         '<div style="display: flex; gap: 1rem; margin-top: 1.5rem;">' +
             '<button class="action-btn action-btn-whatsapp" onclick="sendWhatsapp(\'' + user.phone + '\')" style="flex: 1;">' +
@@ -1134,7 +1151,7 @@ function addNotification(notification) {
     // تحقق من الإشعارات الممسوحة
     let clearedNotifs = JSON.parse(localStorage.getItem('clearedNotifications') || '[]');
     // إذا كان الإشعار لنفس المستخدم ولنفس النوع وتم مسحه سابقاً، لا تضفه
-    if (clearedNotifs.some(n => n.user && n.user.phone === notification.user.phone && n.type === notification.type)) {
+    if (notification.user && clearedNotifs.some(n => n.user && n.user.phone === notification.user.phone && n.type === notification.type)) {
         return;
     }
     notifications.unshift(notification);
@@ -1161,15 +1178,27 @@ function updateNotifications() {
     }
     
     notificationList.innerHTML = notifications.map(function(notif) {
-        return '<div class="notification-item" onclick="viewUserDetails(\'' + notif.user.phone + '\')">' +
-            '<div class="notification-item-header">' +
-                '<div class="notification-icon ' + (notif.type === 'new_user' ? 'new-user' : 'voted') + '">' +
-                    '<i class="fas ' + (notif.type === 'new_user' ? 'fa-user-plus' : 'fa-check-circle') + '"></i>' +
+        if (notif.user && notif.user.phone) {
+            return '<div class="notification-item" onclick="viewUserDetails(\'' + notif.user.phone + '\')">' +
+                '<div class="notification-item-header">' +
+                    '<div class="notification-icon ' + (notif.type === 'new_user' ? 'new-user' : 'voted') + '">' +
+                        '<i class="fas ' + (notif.type === 'new_user' ? 'fa-user-plus' : 'fa-check-circle') + '"></i>' +
+                    '</div>' +
+                    '<div class="notification-message">' + notif.message + '</div>' +
                 '</div>' +
-                '<div class="notification-message">' + notif.message + '</div>' +
-            '</div>' +
-            '<div class="notification-time">' + getTimeAgo(notif.timestamp) + '</div>' +
-        '</div>';
+                '<div class="notification-time">' + getTimeAgo(notif.timestamp) + '</div>' +
+            '</div>';
+        } else {
+            return '<div class="notification-item">' +
+                '<div class="notification-item-header">' +
+                    '<div class="notification-icon ' + (notif.type === 'new_user' ? 'new-user' : 'voted') + '">' +
+                        '<i class="fas ' + (notif.type === 'new_user' ? 'fa-user-plus' : 'fa-check-circle') + '"></i>' +
+                    '</div>' +
+                    '<div class="notification-message">' + notif.message + '</div>' +
+                '</div>' +
+                '<div class="notification-time">' + getTimeAgo(notif.timestamp) + '</div>' +
+            '</div>';
+        }
     }).join('');
 }
 
@@ -1227,6 +1256,32 @@ function showUserMenu() {
 function closeModal() {
     document.getElementById('userModal').classList.remove('active');
 }
+
+    // حذف المستخدم من قاعدة البيانات وحذف البطاقة من الواجهة
+    function deleteUser(phone) {
+        if (!phone) return;
+        if (!window.confirm('هل أنت متأكد أنك تريد حذف هذا المستخدم؟')) return;
+        // حذف من Firebase Realtime Database
+        firebase.database().ref('users/' + phone).remove()
+            .then(function() {
+                // حذف البطاقة من الواجهة
+                var card = document.querySelector('.user-card[data-phone="' + phone + '"]');
+                if (card) card.remove();
+                // إغلاق نافذة التفاصيل إذا كانت مفتوحة
+                closeModal();
+                // إشعار بالنجاح
+                addNotification({
+                    type: 'success',
+                    message: 'تم حذف المستخدم بنجاح.'
+                });
+            })
+            .catch(function(error) {
+                addNotification({
+                    type: 'error',
+                    message: 'حدث خطأ أثناء حذف المستخدم: ' + error.message
+                });
+            });
+    }
 
 function showLoading(show) {
     const loading = document.getElementById('loading');
