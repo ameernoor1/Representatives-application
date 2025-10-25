@@ -837,26 +837,31 @@ function performSearch() {
 }
 
 function showSearchResultsDropdown(results) {
-    let dropdown = document.getElementById('searchResultsDropdown');
-    if (!dropdown) {
-        dropdown = document.createElement('div');
-        dropdown.id = 'searchResultsDropdown';
-        const isMobile = window.innerWidth <= 600;
-        dropdown.style.position = isMobile ? 'fixed' : 'absolute';
-        dropdown.style.background = '#fff';
-        dropdown.style.border = '1px solid #ddd';
-        dropdown.style.width = isMobile ? '96vw' : '100%';
-        dropdown.style.left = isMobile ? '2vw' : '0';
-        dropdown.style.top = isMobile ? '70px' : '';
-        dropdown.style.zIndex = '2000';
-        dropdown.style.maxHeight = isMobile ? '60vh' : '300px';
-        dropdown.style.overflowY = 'auto';
-        dropdown.style.boxShadow = '0 4px 16px rgba(0,0,0,0.12)';
-        dropdown.style.direction = 'rtl';
-        dropdown.style.borderRadius = isMobile ? '18px' : '8px';
-        dropdown.style.padding = isMobile ? '1rem 0.5rem' : '0';
-        dropdown.style.fontSize = isMobile ? '1.1rem' : '1rem';
-        dropdown.style.marginTop = isMobile ? '0' : '4px';
+    // Remove any previous dropdowns
+    document.querySelectorAll('#searchResultsDropdown').forEach(e => e.remove());
+    let dropdown = document.createElement('div');
+    dropdown.id = 'searchResultsDropdown';
+    const isMobile = window.innerWidth <= 600;
+    dropdown.style.position = isMobile ? 'fixed' : 'absolute';
+    dropdown.style.background = '#fff';
+    dropdown.style.border = '1px solid #ddd';
+    dropdown.style.width = isMobile ? '96vw' : '100%';
+    dropdown.style.left = isMobile ? '2vw' : '0';
+    dropdown.style.top = isMobile ? '70px' : '';
+    dropdown.style.zIndex = '2000';
+    dropdown.style.maxHeight = isMobile ? '60vh' : '300px';
+    dropdown.style.overflowY = 'auto';
+    dropdown.style.boxShadow = '0 4px 16px rgba(0,0,0,0.12)';
+    dropdown.style.direction = 'rtl';
+    dropdown.style.borderRadius = isMobile ? '18px' : '8px';
+    dropdown.style.padding = isMobile ? '1rem 0.5rem' : '0';
+    dropdown.style.fontSize = isMobile ? '1.1rem' : '1rem';
+    dropdown.style.marginTop = isMobile ? '0' : '4px';
+    // Always append to .search-box if exists, else to body
+    const searchBox = document.querySelector('.search-box');
+    if (searchBox) {
+        searchBox.appendChild(dropdown);
+    } else {
         document.body.appendChild(dropdown);
     }
     dropdown.innerHTML = '';
