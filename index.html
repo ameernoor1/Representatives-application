@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="0; url=./admin-dashboard.html">
+    <title>جاري التحميل...</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a7b7f, #0d5456);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .container {
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .logo {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 2rem;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .logo img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+        
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .redirect-link {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 1rem 2rem;
+            background: white;
+            color: #1a7b7f;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: bold;
+            transition: transform 0.3s;
+        }
+        
+        .redirect-link:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <img src="https://firebasestorage.googleapis.com/v0/b/messageemeapp.appspot.com/o/Gemini_Generated_Image_tkcjwitkcjwitkcj.png?alt=media&token=3fbffecf-8da5-405d-bcc4-82e2133149f1" alt="أساس العراق">
+        </div>
+        <h1>ائتلاف أساس العراق</h1>
+        <p>صوتك اليوم مستقبلك غداً</p>
+        <div class="spinner"></div>
+        <p style="margin-top: 2rem; font-size: 1rem;">جاري تحميل لوحة التحكم...</p>
+        <a href="./admin-dashboard.html" class="redirect-link">انقر هنا إذا لم يتم التحميل تلقائياً</a>
+    </div>
+    
+    <script>
+        // Redirect after 1 second if meta refresh doesn't work
+        setTimeout(() => {
+            window.location.href = './admin-dashboard.html';
+        }, 1000);
+    </script>
+</body>
+</html>

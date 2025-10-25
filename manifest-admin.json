@@ -1,0 +1,48 @@
+{
+  "name": "لوحة التحكم - ائتلاف أساس العراق",
+  "short_name": "لوحة أساس العراق",
+  "description": "لوحة تحكم إدارية متكاملة لإدارة بيانات الناخبين في ائتلاف أساس العراق - صوتك اليوم مستقبلك غداً.",
+  "start_url": "./admin-dashboard.html",
+  "display": "standalone",
+  "background_color": "#f0f9f9",
+  "theme_color": "#1a7b7f",
+  "orientation": "any",
+  "lang": "ar",
+  "dir": "rtl",
+  "scope": ".",
+  "icons": [
+    {
+      "src": "https://firebasestorage.googleapis.com/v0/b/messageemeapp.appspot.com/o/Gemini_Generated_Image_tkcjwitkcjwitkcj.png?alt=media&token=3fbffecf-8da5-405d-bcc4-82e2133149f1",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://firebasestorage.googleapis.com/v0/b/messageemeapp.appspot.com/o/Gemini_Generated_Image_tkcjwitkcjwitkcj.png?alt=media&token=3fbffecf-8da5-405d-bcc4-82e2133149f1",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://firebasestorage.googleapis.com/v0/b/messageemeapp.appspot.com/o/Gemini_Generated_Image_tkcjwitkcjwitkcj.png?alt=media&token=3fbffecf-8da5-405d-bcc4-82e2133149f1",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "https://firebasestorage.googleapis.com/v0/b/messageemeapp.appspot.com/o/Gemini_Generated_Image_tkcjwitkcjwitkcj.png?alt=media&token=3fbffecf-8da5-405d-bcc4-82e2133149f1",
+      "sizes": "96x96",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["government", "politics", "utilities", "productivity"],
+  "screenshots": [
+    {
+      "src": "https://firebasestorage.googleapis.com/v0/b/messageemeapp.appspot.com/o/Gemini_Generated_Image_tkcjwitkcjwitkcj.png?alt=media&token=3fbffecf-8da5-405d-bcc4-82e2133149f1",
+      "sizes": "540x720",
+      "type": "image/png",
+      "label": "لوحة التحكم الرئيسية"
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}

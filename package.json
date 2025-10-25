@@ -1,0 +1,58 @@
+{
+  "name": "asas-iraq-dashboard",
+  "version": "1.0.0",
+  "description": "لوحة التحكم - ائتلاف أساس العراق",
+  "main": "electron-main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
+  },
+  "keywords": [
+    "election",
+    "iraq",
+    "dashboard",
+    "asas"
+  ],
+  "author": "ائتلاف أساس العراق",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4"
+  },
+  "build": {
+    "appId": "com.asasiraq.dashboard",
+    "productName": "لوحة تحكم أساس العراق",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "admin-dashboard.html",
+      "app.js",
+      "manifest.json",
+      "service-worker.js",
+      "electron-main.js"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "icon.ico"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "icon": "icon.icns"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "icon.png"
+    }
+  }
+}

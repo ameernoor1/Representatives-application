@@ -1,0 +1,1911 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="android-chrome-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="android-chrome-512x512.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="أساس العراق">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>ائتلاف أساس العراق - صوتك اليوم مستقبلك غداً</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a7b7f">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        :root {
+            --primary: #1a7b7f;
+            --primary-dark: #145f63;
+            --primary-light: #2a9ba0;
+            --secondary: #b8945f;
+            --accent: #0d4f52;
+            --success: #10b981;
+            --danger: #ef4444;
+            --iraq-red: #ce1126;
+            --iraq-white: #ffffff;
+            --iraq-black: #000000;
+            --iraq-green: #007a3d;
+            --bg: #f8fafc;
+            --bg-secondary: #f0f9f9;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --text-light: #475569;
+            --text-muted: #94a3b8;
+            --shadow-sm: 0 2px 8px rgba(26, 123, 127, 0.08);
+            --shadow: 0 4px 16px rgba(26, 123, 127, 0.12);
+            --shadow-md: 0 8px 24px rgba(26, 123, 127, 0.16);
+            --shadow-lg: 0 12px 32px rgba(26, 123, 127, 0.2);
+            --radius: 20px;
+            --radius-sm: 12px;
+            --radius-lg: 28px;
+            --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        html, body {
+            height: 100%;
+            min-height: 100vh;
+            width: 100vw;
+            overflow-x: hidden;
+            position: relative;
+        }
+        body {
+            font-family: 'Cairo', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f0f9f9 0%, #ffffff 50%, #f0f9f9 100%);
+            color: var(--text);
+            line-height: 1.7;
+            min-height: 100vh;
+        }
+        #app, .content-area, .user-card-container {
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        /* شاشة الترحيب المحسّنة */
+        #welcomeScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 50%, var(--primary) 100%);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        #welcomeScreen::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 50%, rgba(184, 148, 95, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+            animation: bgMove 15s ease-in-out infinite;
+        }
+
+        @keyframes bgMove {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(20px); }
+        }
+
+        .welcome-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            animation: welcomeFadeIn 1.2s ease-out;
+            padding-bottom: 0 !important;
+        }
+
+        @keyframes welcomeFadeIn {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .welcome-logo {
+            width: 140px;
+            height: 140px;
+            border-radius: 35px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+            animation: logoEntrance 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            margin-bottom: 25px;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+        }
+
+        @keyframes logoEntrance {
+            0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        .welcome-title {
+            color: white;
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            font-weight: 900;
+            text-align: center;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            margin-bottom: 15px;
+            animation: titleSlide 1s ease-out 0.3s both;
+            letter-spacing: -0.5px;
+        }
+
+        @keyframes titleSlide {
+            0% { opacity: 0; transform: translateX(50px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+
+        .welcome-subtitle {
+            color: var(--secondary);
+            font-size: clamp(1.2rem, 3.5vw, 1.6rem);
+            font-weight: 700;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+            animation: subtitleSlide 1s ease-out 0.5s both;
+        }
+
+        @keyframes subtitleSlide {
+            0% { opacity: 0; transform: translateX(-50px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+
+        .list-info-welcome {
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: nowrap;
+        }
+
+        .list-item-welcome {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 18px 28px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            animation: itemEntrance 0.8s ease-out both;
+            min-width: 120px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .list-item-welcome:first-child {
+            animation-delay: 0.7s;
+        }
+
+        .list-item-welcome:last-child {
+            animation-delay: 0.9s;
+        }
+
+        @keyframes itemEntrance {
+            0% { opacity: 0; transform: scale(0.5) rotate(-10deg); }
+            100% { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+
+        .list-label-welcome {
+            font-size: 0.95rem;
+            color: var(--text-light);
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+
+        .list-number-welcome {
+            font-size: 2.8rem;
+            font-weight: 900;
+            color: var(--primary);
+            line-height: 1;
+        }
+
+        .motivation-box {
+            background: linear-gradient(135deg, rgba(206, 17, 38, 0.95) 0%, rgba(0, 122, 61, 0.95) 100%);
+            padding: 25px 30px;
+            border-radius: 25px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+            animation: motivationEntrance 1s ease-out 1.1s both;
+            max-width: 500px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+        }
+
+        @keyframes motivationEntrance {
+            0% { opacity: 0; transform: translateY(50px) scale(0.9); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .motivation-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            animation: iconPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes iconPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .motivation-title {
+            color: white;
+            font-size: clamp(1.4rem, 4vw, 1.8rem);
+            font-weight: 900;
+            margin-bottom: 12px;
+            text-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+            letter-spacing: -0.3px;
+        }
+
+        .motivation-text {
+            color: rgba(255, 255, 255, 0.95);
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
+            line-height: 1.8;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            font-weight: 600;
+        }
+
+        .loading-dots {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 30px;
+            animation: dotsEntrance 1s ease-out 1.3s both;
+        }
+
+        @keyframes dotsEntrance {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        .loading-dots span {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: white;
+            animation: dotBounce 1.4s ease-in-out infinite;
+        }
+
+        .loading-dots span:nth-child(1) { animation-delay: 0s; }
+        .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes dotBounce {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1.2); opacity: 1; }
+        }
+
+        /* مؤشر التحميل المحسّن */
+        .loading-spinner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        .spinner-container {
+            text-align: center;
+            animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes scaleIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .spinner {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+
+        .spinner-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 5px solid transparent;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spinRing 1s linear infinite;
+        }
+
+        .spinner-ring:nth-child(2) {
+            border-top-color: var(--secondary);
+            animation-delay: 0.15s;
+            width: 70%;
+            height: 70%;
+            top: 15%;
+            left: 15%;
+        }
+
+        .spinner-ring:nth-child(3) {
+            border-top-color: var(--iraq-green);
+            animation-delay: 0.3s;
+            width: 40%;
+            height: 40%;
+            top: 30%;
+            left: 30%;
+        }
+
+        @keyframes spinRing {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .spinner-text {
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        .progress-bar-container {
+            width: 250px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 50%, var(--iraq-green) 100%);
+            border-radius: 10px;
+            animation: progressMove 2s ease-in-out infinite;
+            width: 0%;
+        }
+
+        @keyframes progressMove {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+
+        .upload-percentage {
+            color: var(--secondary);
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-top: 15px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        /* شاشة Splash */
+        #splash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: splashFade 2s ease-in-out;
+            padding: 0;
+            overflow: hidden;
+        }
+        
+        @keyframes splashFade {
+            0%, 85% { opacity: 1; }
+            100% { opacity: 0; pointer-events: none; }
+        }
+
+        /* التطبيق الرئيسي */
+        #app {
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 10px 12px 8px;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(26, 123, 127, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .app-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: headerGlow 8s linear infinite;
+        }
+
+        @keyframes headerGlow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* زر تسجيل الخروج كأيقونة */
+        .logout-icon {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            cursor: pointer;
+            z-index: 10;
+            box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
+            transition: var(--transition);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .logout-icon:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+            background: rgba(220, 38, 38, 1);
+        }
+
+        .logout-icon:active {
+            transform: scale(0.95);
+        }
+
+        .app-logo {
+            width: 90px;
+            height: 90px;
+            border-radius: 22px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 2;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            animation: logoFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .app-title-main {
+            font-size: clamp(1.6rem, 4.5vw, 2.2rem);
+            font-weight: 900;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+            letter-spacing: -0.5px;
+        }
+
+        .app-subtitle-main {
+            font-size: clamp(1.1rem, 3vw, 1.4rem);
+            color: var(--secondary);
+            font-weight: 700;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .list-info {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+            flex-wrap: nowrap;
+        }
+
+        .list-item {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 25px;
+            border-radius: 18px;
+            text-align: center;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+            min-width: 110px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: var(--transition);
+        }
+
+        .list-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
+        }
+
+        .list-label {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+
+        .list-number {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--primary);
+            line-height: 1;
+        }
+
+        /* منطقة المحتوى */
+        .content-area {
+            flex: 1;
+            padding: 8px 6px 4px 6px;
+            max-width: 340px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            min-height: 0;
+        }
+        .register-content-area {
+            flex: 1;
+            padding: 8px 6px 4px 6px;
+            max-width: 340px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            min-height: 0;
+        }
+        .register-form label {
+            font-size: 0.85rem;
+            margin-bottom: -8px;
+        }
+        .register-form input, .register-form select {
+            padding: 10px 12px;
+            font-size: 0.95rem;
+            border-radius: 10px;
+        }
+        .register-form button {
+            padding: 10px 18px;
+            font-size: 1rem;
+            border-radius: 10px;
+        }
+        .register-form #captureFrontBtn {
+            padding: 8px 16px;
+            font-size: 0.95rem;
+            border-radius: 10px;
+        }
+        @media (max-width: 480px) {
+            .register-content-area {
+                max-width: 98vw;
+                padding: 4px 2vw 2px 2vw;
+            }
+            .register-form input, .register-form select {
+                font-size: 0.92rem;
+                padding: 8px 8px;
+            }
+            .register-form button, .register-form #captureFrontBtn {
+                font-size: 0.95rem;
+                padding: 8px 12px;
+            }
+        }
+        .app-header {
+            padding-top: 4px;
+            padding-bottom: 4px;
+        }
+        .app-logo {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 8px;
+        }
+        .app-title-main {
+            font-size: 1.2rem;
+            margin-bottom: 2px;
+        }
+        .app-subtitle-main {
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+        }
+        .list-info {
+            gap: 6px;
+        }
+        .list-item {
+            padding: 7px 12px;
+            min-width: 60px;
+            font-size: 0.9rem;
+        }
+        h2 {
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+        }
+        label {
+            font-size: 0.85rem;
+            margin-bottom: -8px;
+        }
+        input, select {
+            padding: 10px 12px;
+            font-size: 0.95rem;
+            border-radius: 10px;
+        }
+        button {
+            padding: 10px 18px;
+            font-size: 1rem;
+            border-radius: 10px;
+        }
+        @media (max-width: 480px) {
+            .content-area {
+                max-width: 98vw;
+                padding: 4px 2vw 2px 2vw;
+            }
+            .app-logo {
+                width: 48px;
+                height: 48px;
+            }
+            h2 {
+                font-size: 1rem;
+            }
+            input, select {
+                font-size: 0.92rem;
+                padding: 8px 8px;
+            }
+            button {
+                font-size: 0.95rem;
+                padding: 8px 12px;
+            }
+        }
+        .login-banner {
+            margin-top: 8px;
+            margin-bottom: 10px;
+        }
+        .app-header {
+            padding-top: 6px;
+            padding-bottom: 6px;
+        }
+        .list-info {
+            margin-bottom: 0;
+        }
+        .login-actions {
+            margin-top: 18px;
+            margin-bottom: 0;
+        }
+        .login-register-btn {
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary-light) 100%);
+            color: var(--primary-dark);
+            border: none;
+            border-radius: 16px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            padding: 14px 32px;
+            box-shadow: 0 4px 16px rgba(26,123,127,0.10);
+            margin-top: 8px;
+            margin-bottom: 0;
+            transition: var(--transition);
+        }
+        .login-register-btn:hover {
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary) 100%);
+            color: var(--primary);
+            box-shadow: 0 8px 24px rgba(26,123,127,0.18);
+        }
+        .login-register-text {
+            font-size: 1.05rem;
+            color: var(--text-light);
+            font-weight: 700;
+            margin-bottom: 4px;
+            margin-top: 10px;
+            letter-spacing: 0.2px;
+        }
+
+        h2 {
+            color: var(--primary);
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            font-weight: 800;
+            margin-bottom: 25px;
+            text-align: center;
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 2px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        label {
+            color: var(--text);
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: -12px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 16px 18px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: var(--transition);
+            background: white;
+            color: var(--text);
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(26, 123, 127, 0.07);
+        }
+
+        select {
+            min-width: 120px;
+            max-width: 100%;
+            background: linear-gradient(90deg, #f0f9f9 0%, #fff 100%);
+            border: 2px solid var(--primary-light);
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 10px;
+        }
+
+        select option {
+            padding: 10px;
+            font-size: 1rem;
+            color: var(--primary-dark);
+            background: #f8f8f8;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        @media (max-width: 480px) {
+            select {
+                font-size: 1rem;
+                padding: 14px 12px;
+                min-width: 100px;
+            }
+            select option {
+                font-size: 0.95rem;
+                padding: 8px;
+            }
+        }
+        
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(26, 123, 127, 0.1);
+            transform: translateY(-2px);
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%231a7b7f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: left 12px center;
+            background-size: 20px;
+            padding-left: 45px;
+        }
+
+        button {
+            padding: 16px 28px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 1.1rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: inherit;
+            box-shadow: var(--shadow);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        button:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        button:active {
+            transform: translateY(-1px);
+        }
+
+        button[type="button"] {
+            background: linear-gradient(135deg, var(--text-muted) 0%, var(--text-light) 100%);
+        }
+
+        /* بطاقة المستخدم */
+        .user-card-container {
+            perspective: 1000px;
+            margin-bottom: 25px;
+        }
+
+        .user-card {
+
+                position: relative;
+                width: 100%;
+                min-height: 500px;
+                cursor: default;
+            }
+
+            /* منطقة المعلومات فقط تدور */
+            .card-info-flip {
+                position: relative;
+                width: 100%;
+                min-height: 1px;
+                perspective: 1200px;
+            }
+            .card-info-inner {
+                width: 100%;
+                transition: transform 0.8s;
+                transform-style: preserve-3d;
+                position: relative;
+            }
+            .user-card.flipped .card-info-inner {
+                transform: rotateY(180deg);
+            }
+            .card-info-face {
+                position: absolute;
+                width: 100%;
+                left: 0;
+                top: 0;
+                backface-visibility: hidden;
+                border-radius: 0 0 var(--radius) var(--radius);
+                box-shadow: none;
+                overflow: visible;
+            }
+            .card-info-front {
+                z-index: 2;
+            }
+            .card-info-back {
+                transform: rotateY(180deg);
+                z-index: 3;
+            }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 25px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: cardGlow 10s linear infinite;
+        }
+
+        @keyframes cardGlow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .profile-img-container {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            margin: 0 auto 15px;
+            z-index: 2;
+        }
+
+        .profile-img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid white;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .profile-img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .camera-icon {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background: var(--primary);
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            border: 3px solid white;
+            transition: var(--transition);
+        }
+
+        .camera-icon:hover {
+            transform: scale(1.1);
+            background: var(--primary-dark);
+        }
+
+        .user-name {
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: white;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 2;
+            margin-bottom: 8px;
+        }
+
+        .user-phone {
+            font-size: 1.1rem;
+            color: var(--secondary);
+            font-weight: 700;
+            position: relative;
+            z-index: 2;
+        }
+
+        .card-body {
+            padding: 25px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 18px;
+        }
+
+        .info-item {
+            background: var(--bg-secondary);
+            padding: 18px;
+            border-radius: var(--radius-sm);
+            border: 2px solid var(--border);
+            transition: var(--transition);
+        }
+
+        .info-item:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow);
+            border-color: var(--primary);
+        }
+
+        .info-label {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+
+        .info-value {
+            font-size: 1.1rem;
+            color: var(--text);
+            font-weight: 800;
+        }
+
+        .card-back .info-item {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .card-back .info-label {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .card-back .info-value {
+            color: white;
+        }
+
+        .flip-hint {
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--iraq-red) 0%, var(--iraq-green) 100%);
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-top: 15px;
+            border-radius: var(--radius-sm);
+            animation: hintPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes hintPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        /* رسائل التنبيه */
+        .alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            left: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 18px 22px;
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-lg);
+            z-index: 100000;
+            animation: alertSlide 0.4s ease-out;
+            font-weight: 700;
+        }
+
+        @keyframes alertSlide {
+            0% { transform: translateY(-100px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        .alert-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .alert-error {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* التوافق مع الشاشات الصغيرة */
+        @media (max-width: 480px) {
+            .list-info-welcome,
+            .list-info {
+                flex-direction: row !important;
+                gap: 8px !important;
+                justify-content: center;
+                align-items: center;
+            }
+            .list-item-welcome,
+            .list-item {
+                width: auto;
+                min-width: 90px;
+                max-width: 140px;
+                margin: 0 2px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .motivation-box {
+                padding: 20px;
+            }
+
+            .welcome-logo {
+                width: 120px;
+                height: 120px;
+            }
+
+            .logout-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1.1rem;
+                top: 15px;
+                left: 15px;
+            }
+        }
+
+        /* إخفاء العناصر */
+        .hidden {
+            display: none !important;
+        }
+
+        /* تحسينات إضافية */
+        input[type="file"] {
+            display: none;
+        }
+
+        ::placeholder {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+    </style>
+</head>
+<body>
+    <!-- شاشة الترحيب -->
+    <!-- تم إلغاء رسالة تثبيت التطبيق على iOS -->
+    <div id="welcomeScreen">
+        <div class="welcome-content">
+            <img src="https://firebasestorage.googleapis.com/v0/b/messageemeapp.appspot.com/o/Gemini_Generated_Image_tkcjwitkcjwitkcj.png?alt=media&token=3fbffecf-8da5-405d-bcc4-82e2133149f1" alt="شعار التطبيق" class="welcome-logo">
+            <div class="welcome-title">ائتلاف أساس العراق</div>
+            <div class="welcome-subtitle">العراق هو الأساس</div>
+            <div class="list-info-welcome">
+                <div class="list-item-welcome">
+                    <div class="list-label-welcome">القائمة</div>
+                    <div class="list-number-welcome">244</div>
+                </div>
+                <div class="list-item-welcome">
+                    <div class="list-label-welcome">التسلسل</div>
+                    <div class="list-number-welcome">1</div>
+                </div>
+            </div>
+            <div class="motivation-box">
+                <div class="motivation-icon">🗳️</div>
+                <div class="motivation-title">صوتك اليوم هو مستقبلك غداً</div>
+                <div class="motivation-text">
+                    كل صوت يُحدث فرقاً.. شارك في بناء العراق الجديد
+                    <br>
+                    معاً نصنع التغيير.. معاً نبني المستقبل
+                </div>
+            </div>
+            <div class="loading-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- شاشة Splash الأصلية -->
+    <div id="splash" class="hidden"></div>
+
+    <!-- مؤشر التحميل -->
+    <div id="loadingSpinner" class="loading-spinner hidden">
+        <div class="spinner-container">
+            <div class="spinner">
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring"></div>
+            </div>
+            <div class="spinner-text" id="loadingText">جاري التحميل...</div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="upload-percentage" id="uploadPercentage">0%</div>
+        </div>
+    </div>
+
+    <!-- التطبيق الرئيسي -->
+    <div id="app"></div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    
+    <script>
+        // عرض نافذة تثبيت التطبيق لمستخدمي iPhone/Safari
+        function showIOSInstallPrompt() {
+            var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+            var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+            var isInStandalone = window.navigator.standalone === true;
+            if (isIOS && isSafari && !isInStandalone) {
+                setTimeout(function() {
+                    var prompt = document.getElementById('iosInstallPrompt');
+                    if (prompt) prompt.style.display = 'block';
+                }, 2000);
+            }
+        }
+        showIOSInstallPrompt();
+        // قائمة الأقضية (Qada) والنواحي (Nahia) لمحافظة بابل – مُحدَّثة
+        const DISTRICTS = [
+            // قضاء الحلة (مركز المحافظة)
+            'الحلة',
+            'الكفل',
+            'أبي غرق',
+
+            // قضاء المحاويل
+            'المحاويل',
+            'المشروع',
+            'الإمام',
+            'النيل',
+
+            // قضاء الهاشمية
+            'الهاشمية',
+            'القاسم',
+            'الطليعة',
+
+            // قضاء الحمزة الغربي
+            'الحمزة الغربي',
+            'المدحتية',
+            'الشوملي',
+            'الخميسية',
+            'الحصين',
+
+            // قضاء المسيب
+            'المسيب',
+            'سدة الهندية',
+            'جرف النصر',      // الاسم الرسمي الحالي بدل "جرف الصخر"
+            'الإسكندرية',
+            'الحصوة'
+        ];
+
+        const CANDIDATES = [
+            "سيد حسين السعبري", "حمزه جبار حربي محمد", "عدي اركان عباس نعمان",
+            "عصام فخري برتو عويد", "احمد بدر جاسم حسین", "اکرام کامل ظاهر محسن",
+            "ميثم عبد الجاسم عبد الحمزه", "فرح احمد کامل درب", "محمد جواد عبد الكاظم",
+            "تحسين فليح حسن عبود", "حسين كامل ناجي معيدي", "حميد حمزه کاظم مسیر",
+            "ابتسام حسن ذياب مرزوك", "اسیل خالد عبد محمد", "محمد هادي كاظم جواد",
+            "سلام عبد الكاظم عبد الله", "ثائر عبد اللطيف عبد الحميد", "زهره محمد سعود عزیز",
+            "مرزة حمزة عبدمعين", "عمر خضير عباس كسار", "زينب عباس علي لطيف",
+            "زهير عباس عبود رزوقي", "الاء عبد الكاظم عباس", "غيث علي سميسم عبيد",
+            "ياسر عامر صبار محيسن", "كريم سعد حسين لوطان", "نداء طالب محسن ثاجب",
+            "أسماء حسين جدوع کاظم", "زهير جواد ناجي عباس", "احمد سلمان عوده بريو",
+            "سعود حسن جمعة مطر"
+        ];
+
+        // تحسين عرض قائمة المرشحين بشكل جميل وجذاب
+        function createSelectOptions(array, selectedValue = '') {
+            let options = '<option value="">اختر...</option>';
+            array.forEach(item => {
+            const selected = item === selectedValue ? 'selected' : '';
+            options += `<option value="${item}" ${selected}>${item}</option>`;
+            });
+            return options;
+        }
+
+        // إخفاء شاشة الترحيب بعد 3 ثواني
+        setTimeout(() => {
+            const welcomeScreen = document.getElementById('welcomeScreen');
+            welcomeScreen.style.animation = 'splashFade 1s ease-in-out forwards';
+            setTimeout(() => {
+                welcomeScreen.style.display = 'none';
+            }, 1000);
+        }, 3000);
+
+        // تسجيل Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./service-worker.js?v=20251024', { updateViaCache: 'none' })
+                .then(reg => console.log('✅ Service Worker مسجل'))
+                .catch(err => console.log('❌ خطأ في تسجيل Service Worker:', err));
+        }
+
+        // إعداد Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCcXuYS86E0VCcMzC22Rg3t9VYGPQ_MjJE",
+            authDomain: "messageemeapp.firebaseapp.com",
+            databaseURL: "https://messageemeapp-default-rtdb.firebaseio.com",
+            projectId: "messageemeapp",
+            storageBucket: "messageemeapp.appspot.com",
+            messagingSenderId: "867426696402",
+            appId: "1:867426696402:web:2c88ad0c9e1a0a6a0f8f3a"
+        };
+
+        let db = null;
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            db = firebase.database();
+            console.log('✅ Firebase متصل بنجاح');
+        } catch (error) {
+            console.error('❌ خطأ في الاتصال بـ Firebase:', error);
+        }
+
+        // متغيرات عامة
+        let user = null;
+
+        // مؤشر التحميل المحسّن
+        function showLoadingSpinner(text = 'جاري التحميل...') {
+            const spinner = document.getElementById('loadingSpinner');
+            const loadingText = document.getElementById('loadingText');
+            const progressBar = document.getElementById('progressBar');
+            const uploadPercentage = document.getElementById('uploadPercentage');
+            
+            loadingText.textContent = text;
+            spinner.classList.remove('hidden');
+            
+            // محاكاة تقدم واقعي للرفع
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 95) {
+                    progress = 95;
+                    clearInterval(interval);
+                }
+                progressBar.style.width = progress + '%';
+                uploadPercentage.textContent = Math.floor(progress) + '%';
+            }, 200);
+            
+            // حفظ interval للتنظيف لاحقاً
+            spinner.dataset.interval = interval;
+        }
+
+        function hideLoadingSpinner() {
+            const spinner = document.getElementById('loadingSpinner');
+            const progressBar = document.getElementById('progressBar');
+            const uploadPercentage = document.getElementById('uploadPercentage');
+            
+            // إكمال التقدم إلى 100%
+            progressBar.style.width = '100%';
+            uploadPercentage.textContent = '100%';
+            
+            // مسح interval إذا كان موجوداً
+            if (spinner.dataset.interval) {
+                clearInterval(parseInt(spinner.dataset.interval));
+            }
+            
+            setTimeout(() => {
+                spinner.classList.add('hidden');
+                progressBar.style.width = '0%';
+                uploadPercentage.textContent = '0%';
+            }, 500);
+        }
+
+        // عرض رسائل التنبيه
+        function showAlert(message, type = 'success') {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            document.body.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.style.animation = 'alertSlide 0.4s ease-out reverse';
+                setTimeout(() => alert.remove(), 400);
+            }, 3000);
+        }
+
+        // دالة لإنشاء قائمة منسدلة
+        function createSelectOptions(array, selectedValue = '') {
+            let options = '<option value="">اختر...</option>';
+            array.forEach(item => {
+                const selected = item === selectedValue ? 'selected' : '';
+                options += `<option value="${item}" ${selected}>${item}</option>`;
+            });
+            return options;
+        }
+
+        // شاشة تسجيل الدخول
+        function renderLogin() {
+            document.getElementById('app').innerHTML = `
+                <div class="app-header">
+                    <img src="https://firebasestorage.googleapis.com/v0/b/messageemeapp.appspot.com/o/Gemini_Generated_Image_tkcjwitkcjwitkcj.png?alt=media&token=3fbffecf-8da5-405d-bcc4-82e2133149f1" alt="شعار التطبيق" class="app-logo">
+                    <div class="app-title-main">ائتلاف أساس العراق</div>
+                    <div class="app-subtitle-main">العراق هو الأساس</div>
+                    <div class="list-info">
+                        <div class="list-item">
+                            <div class="list-label">القائمة</div>
+                            <div class="list-number">244</div>
+                        </div>
+                        <div class="list-item">
+                            <div class="list-label">التسلسل</div>
+                            <div class="list-number">1</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="content-area">
+                    <h2>🗳️ تسجيل الدخول</h2>
+                    <form id="loginForm">
+                        <label>الاسم الثلاثي</label>
+                        <input type="text" name="fullName" placeholder="أدخل الاسم الثلاثي" required>
+                        <label>رقم الهاتف</label>
+                        <input type="tel" name="phone" placeholder="07xxxxxxxxx" required pattern="[0-9]{11}" maxlength="11" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                        <button type="submit">دخول</button>
+                    </form>
+                    <div style="display:flex;align-items:center;justify-content:center;margin-top:10px;gap:8px;">
+                        <span style="font-size:0.95rem;color:var(--text-light);font-weight:700;">مستخدم جديد؟</span>
+                        <button type="button" style="background:linear-gradient(135deg, var(--secondary) 0%, var(--primary-light) 100%);color:var(--primary-dark);border:none;border-radius:10px;font-size:0.95rem;font-weight:800;padding:8px 18px;box-shadow:0 2px 8px rgba(26,123,127,0.10);margin:0;transition:var(--transition);" onclick="renderRegister()">سجل الآن</button>
+                    </div>
+                </div>
+            `;
+            
+            setTimeout(() => {
+                document.getElementById('loginForm').onsubmit = function(e) {
+                    e.preventDefault();
+                    const fullName = this.fullName.value.trim();
+                    const phone = this.phone.value.trim();
+                    
+                    showLoadingSpinner('جاري التحقق من بياناتك...');
+                    
+                    // محاولة جلب من قاعدة البيانات أولاً
+                    if (db) {
+                        db.ref('users/' + phone).once('value').then(snapshot => {
+                            hideLoadingSpinner();
+                            if (snapshot.exists()) {
+                                const userData = snapshot.val();
+                                // التحقق من الاسم
+                                if (userData.fullName === fullName) {
+                                    user = userData;
+                                    localStorage.setItem('currentUser', JSON.stringify(user));
+                                    showAlert('تم تسجيل الدخول بنجاح! 🎉');
+                                    renderUserData(user);
+                                } else {
+                                    showAlert('الاسم أو رقم الهاتف غير صحيح', 'error');
+                                }
+                            } else {
+                                // البحث في localStorage
+                                const users = JSON.parse(localStorage.getItem('users') || '[]');
+                                const found = users.find(u => u.phone === phone && u.fullName === fullName);
+                                if (found) {
+                                    user = found;
+                                    localStorage.setItem('currentUser', JSON.stringify(user));
+                                    showAlert('تم تسجيل الدخول بنجاح! 🎉');
+                                    renderUserData(user);
+                                } else {
+                                    showAlert('الاسم أو رقم الهاتف غير صحيح. يرجى التسجيل أولاً', 'error');
+                                }
+                            }
+                        }).catch(err => {
+                            hideLoadingSpinner();
+                            showAlert('خطأ في الاتصال: ' + err.message, 'error');
+                        });
+                    } else {
+                        hideLoadingSpinner();
+                        // البحث في localStorage فقط
+                        const users = JSON.parse(localStorage.getItem('users') || '[]');
+                        const found = users.find(u => u.phone === phone && u.fullName === fullName);
+                        if (found) {
+                            user = found;
+                            localStorage.setItem('currentUser', JSON.stringify(user));
+                            showAlert('تم تسجيل الدخول بنجاح! 🎉');
+                            renderUserData(user);
+                        } else {
+                            showAlert('الاسم أو رقم الهاتف غير صحيح. يرجى التسجيل أولاً', 'error');
+                        }
+                    }
+                };
+            }, 100);
+        }
+
+        // شاشة التسجيل
+        function renderRegister() {
+            document.getElementById('app').innerHTML = `
+                <div class="app-header">
+                    <img src="https://firebasestorage.googleapis.com/v0/b/messageemeapp.appspot.com/o/Gemini_Generated_Image_tkcjwitkcjwitkcj.png?alt=media&token=3fbffecf-8da5-405d-bcc4-82e2133149f1" alt="شعار التطبيق" class="app-logo">
+                    <div class="app-title-main">ائتلاف أساس العراق</div>
+                    <div class="app-subtitle-main">العراق هو الأساس</div>
+                    <div class="list-info">
+                        <div class="list-item">
+                            <div class="list-label">القائمة</div>
+                            <div class="list-number">244</div>
+                        </div>
+                        <div class="list-item">
+                            <div class="list-label">التسلسل</div>
+                            <div class="list-number">1</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="register-content-area">
+                    <h2>📝 تسجيل مستخدم جديد</h2>
+                    <form id="registerForm" class="register-form">
+                        <label>الاسم الثلاثي</label>
+                        <input type="text" name="fullName" placeholder="أدخل الاسم الثلاثي" required>
+                        <label>رقم الهاتف</label>
+                        <input type="tel" name="phone" placeholder="07xxxxxxxxx" required pattern="[0-9]{11}" maxlength="11" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                        <label>المدرسة / المركز</label>
+                        <input type="text" name="school" placeholder="اسم المدرسة أو المركز" required>
+                        <label>رقم المحطة</label>
+                        <input type="number" name="stationNumber" placeholder="رقم المحطة" required min="1" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                        <label>القضاء</label>
+                        <select name="district" required>
+                            ${createSelectOptions(DISTRICTS)}
+                        </select>
+                        <label>الجنس</label>
+                        <select name="gender" required>
+                            <option value="">اختر الجنس</option>
+                            <option value="ذكر">ذكر</option>
+                            <option value="أنثى">أنثى</option>
+                        </select>
+                        <label>اسم المرشح</label>
+                        <select name="candidate" required>
+                            ${createSelectOptions(CANDIDATES)}
+                        </select>
+                        <label>الركيزة</label>
+                        <input type="text" name="parent" placeholder="اسم الركيزة" required>
+                        <label>عدد الأفراد</label>
+                        <input type="number" name="individualCount" value="1" min="1" required inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                        <label>الصورة الأمامية</label>
+                        <input type="file" id="frontImageInput" name="frontImage" accept="image/*" capture="environment" required style="display:none">
+                        <div style="text-align:center;margin-bottom:12px;">
+                            <button type="button" id="captureFrontBtn">📷 التقاط/اختيار صورة أمامية</button>
+                            <span id="frontImageName" style="display:block;margin-top:6px;color:var(--primary-dark);font-size:0.92rem;"></span>
+                        </div>
+                        <button type="submit">تسجيل</button>
+                    </form>
+                    <div style="display:flex;align-items:center;justify-content:center;margin-top:10px;gap:8px;">
+                        <span style="font-size:0.95rem;color:var(--text-light);font-weight:700;">لديك حساب؟</span>
+                        <button type="button" style="background:linear-gradient(135deg, var(--secondary) 0%, var(--primary-light) 100%);color:var(--primary-dark);border:none;border-radius:10px;font-size:0.95rem;font-weight:800;padding:8px 18px;box-shadow:0 2px 8px rgba(26,123,127,0.10);margin:0;transition:var(--transition);" onclick="renderLogin()">سجل دخول</button>
+                    </div>
+                </div>
+            `;
+            setTimeout(() => {
+                const captureBtn = document.getElementById('captureFrontBtn');
+                const frontInput = document.getElementById('frontImageInput');
+                const frontName = document.getElementById('frontImageName');
+                if (captureBtn && frontInput) {
+                    captureBtn.onclick = function() {
+                        frontInput.click();
+                    };
+                    frontInput.onchange = function(e) {
+                        if (frontInput.files && frontInput.files[0]) {
+                            frontName.textContent = 'تم اختيار الصورة: ' + frontInput.files[0].name;
+                        } else {
+                            frontName.textContent = '';
+                        }
+                    };
+                }
+            }, 100);
+            
+            setTimeout(() => {
+                document.getElementById('registerForm').onsubmit = function(e) {
+                    e.preventDefault();
+                    showLoadingSpinner('جاري حفظ بياناتك...');
+                    const frontInput = document.getElementById('frontImageInput');
+                    const phone = this.phone.value.trim();
+                    const fullName = this.fullName.value.trim();
+                    const school = this.school.value.trim();
+                    const stationNumber = this.stationNumber.value.trim();
+                    const district = this.district.value;
+                    const gender = this.gender.value;
+                    const candidate = this.candidate.value;
+                    const parent = this.parent.value.trim();
+                    const individualCount = this.individualCount.value.trim();
+                    // تحقق من جميع الخانات
+                    if (!phone || !fullName || !school || !stationNumber || !district || !gender || !candidate || !parent || !individualCount) {
+                        showAlert('يرجى تعبئة جميع الخانات بشكل صحيح!', 'error');
+                        return;
+                    }
+                    if (!frontInput.files || !frontInput.files[0]) {
+                        showAlert('يرجى اختيار أو التقاط صورة أمامية!', 'error');
+                        return;
+                    }
+                    // تحقق من رقم الهاتف في قاعدة البيانات
+                    showLoadingSpinner('جاري التحقق من رقم الهاتف...');
+                    if (db) {
+                        db.ref('users/' + phone).once('value').then(snapshot => {
+                            if (snapshot.exists()) {
+                                hideLoadingSpinner();
+                                showAlert('الحساب موجود بالفعل بهذا الرقم!', 'error');
+                                return;
+                            } else {
+                                // تابع رفع الصورة وحفظ البيانات
+                                showLoadingSpinner('جاري رفع الصورة الأمامية...');
+                                const frontFile = frontInput.files[0];
+                                const storageRef = firebase.storage().ref();
+                                const fileRef = storageRef.child('user-images/' + phone + '_front_' + Date.now() + '.webp');
+                                fileRef.put(frontFile).then(snapshot => {
+                                    return snapshot.ref.getDownloadURL();
+                                }).then(downloadURL => {
+                                    hideLoadingSpinner();
+                                    showLoadingSpinner('جاري حفظ بياناتك...');
+                                    const newUser = {
+                                        candidate,
+                                        createdAt: new Date().toISOString(),
+                                        district,
+                                        fullName,
+                                        gender,
+                                        images: {
+                                            front: downloadURL
+                                        },
+                                        individualCount: parseInt(individualCount) || 1,
+                                        parent,
+                                        phone,
+                                        profileImg: '',
+                                        school,
+                                        stationNumber,
+                                        updatedAt: new Date().toISOString()
+                                    };
+                                    // حفظ في localStorage
+                                    let users = JSON.parse(localStorage.getItem('users') || '[]');
+                                    users.push(newUser);
+                                    localStorage.setItem('users', JSON.stringify(users));
+                                    localStorage.setItem('currentUser', JSON.stringify(newUser));
+                                    // حفظ في Firebase
+                                    db.ref('users/' + newUser.phone).set(newUser).then(() => {
+                                        hideLoadingSpinner();
+                                        showAlert('تم التسجيل بنجاح! مرحباً بك 🎉');
+                                        user = newUser;
+                                        renderUserData(user);
+                                    }).catch(err => {
+                                        hideLoadingSpinner();
+                                        showAlert('تم التسجيل محلياً. خطأ في الاتصال بقاعدة البيانات', 'error');
+                                        user = newUser;
+                                        renderUserData(user);
+                                    });
+                                }).catch(err => {
+                                    hideLoadingSpinner();
+                                    showAlert('فشل رفع الصورة الأمامية: ' + err.message, 'error');
+                                });
+                            }
+                        }).catch(err => {
+                            hideLoadingSpinner();
+                            showAlert('خطأ في الاتصال بقاعدة البيانات: ' + err.message, 'error');
+                        });
+                    } else {
+                        hideLoadingSpinner();
+                        showAlert('تعذر الاتصال بقاعدة البيانات. يرجى المحاولة لاحقاً.', 'error');
+                    }
+                    // حفظ في localStorage
+                    let users = JSON.parse(localStorage.getItem('users') || '[]');
+                    // التحقق من عدم وجود الرقم مسبقاً
+                    if (users.some(u => u.phone === newUser.phone)) {
+                        hideLoadingSpinner();
+                        showAlert('رقم الهاتف مسجل مسبقاً', 'error');
+                        return;
+                    }
+                    users.push(newUser);
+                    localStorage.setItem('users', JSON.stringify(users));
+                    localStorage.setItem('currentUser', JSON.stringify(newUser));
+                    // حفظ في Firebase
+                    if (db) {
+                        db.ref('users/' + newUser.phone).set(newUser).then(() => {
+                            hideLoadingSpinner();
+                            showAlert('تم التسجيل بنجاح! مرحباً بك 🎉');
+                            user = newUser;
+                            renderUserData(user);
+                        }).catch(err => {
+                            hideLoadingSpinner();
+                            showAlert('تم التسجيل محلياً. خطأ في الاتصال بقاعدة البيانات', 'error');
+                            user = newUser;
+                            renderUserData(user);
+                        });
+                    } else {
+                        hideLoadingSpinner();
+                        showAlert('تم التسجيل محلياً بنجاح! 🎉');
+                        user = newUser;
+                        renderUserData(user);
+                    }
+                };
+            }, 100);
+        }
+
+        // عرض بيانات المستخدم
+
+            function renderUserData(userData) {
+                user = userData;
+                document.getElementById('app').innerHTML = `
+                    <div class="app-header">
+                        <img src="https://firebasestorage.googleapis.com/v0/b/messageemeapp.appspot.com/o/Gemini_Generated_Image_tkcjwitkcjwitkcj.png?alt=media&token=3fbffecf-8da5-405d-bcc4-82e2133149f1" alt="شعار التطبيق" class="app-logo">
+                        <div class="app-title-main">ائتلاف أساس العراق</div>
+                        <div class="app-subtitle-main">العراق هو الأساس</div>
+                        <div class="list-info">
+                            <div class="list-item">
+                                <div class="list-label">القائمة</div>
+                                <div class="list-number">244</div>
+                            </div>
+                            <div class="list-item">
+                                <div class="list-label">التسلسل</div>
+                                <div class="list-number">1</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="content-area">
+                        <h2>👤 بطاقة الناخب</h2>
+                        <div class="user-card-container">
+                            <div class="user-card" id="flipCard">
+                                <div class="card-header">
+                                    <div class="profile-img-container">
+                                        <img src="${user.profileImg || 'https://firebasestorage.googleapis.com/v0/b/messageemeapp.appspot.com/o/Gemini_Generated_Image_tkcjwitkcjwitkcj.png?alt=media&token=3fbffecf-8da5-405d-bcc4-82e2133149f1'}" 
+                                             alt="صورة المنتخب" 
+                                             class="profile-img" 
+                                             id="profileImg">
+                                        <div class="camera-icon">📷</div>
+                                        <input type="file" id="profileInput" accept="image/*">
+                                    </div>
+                                    <div class="user-name">${user.fullName}</div>
+                                    <div class="user-phone">📱 ${user.phone}</div>
+                                </div>
+                                <div class="card-info-flip">
+                                    <div class="card-info-inner">
+                                        <div class="card-info-face card-info-front">
+                                            <div class="card-body">
+                                                <div class="info-grid">
+                                                    <div class="info-item">
+                                                        <div class="info-label">🏫 المدرسة/المركز</div>
+                                                        <div class="info-value">${user.school || '-'}</div>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <div class="info-label">🔢 رقم المحطة</div>
+                                                        <div class="info-value">${user.stationNumber || '-'}</div>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <div class="info-label">📍 القضاء</div>
+                                                        <div class="info-value">${user.district}</div>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <div class="info-label">👥 الجنس</div>
+                                                        <div class="info-value">${user.gender}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="flip-hint">👆 اضغط على المعلومات لرؤية المزيد</div>
+                                            </div>
+                                        </div>
+                                        <div class="card-info-face card-info-back">
+                                            <div class="card-body">
+                                                <div class="info-grid">
+                                                    <div class="info-item">
+                                                        <div class="info-label">🎯 المرشح</div>
+                                                        <div class="info-value">${user.candidate || '-'}</div>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <div class="info-label">🏛️ الركيزة</div>
+                                                        <div class="info-value">${user.parent || '-'}</div>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <div class="info-label">👨‍👩‍👧‍👦 عدد الأفراد</div>
+                                                        <div class="info-value">${user.individualCount || 1}</div>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <div class="info-label">📅 تاريخ التسجيل</div>
+                                                        <div class="info-value">${new Date(user.createdAt).toLocaleDateString('ar-IQ')}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="flip-hint">👆 اضغط للعودة</div>
+                                                <div style="text-align:center;margin-top:24px;">
+                                                    <button class="logout-icon" onclick="logoutUser()" title="تسجيل الخروج" style="position:static;display:inline-block;width:auto;height:auto;padding:12px 32px;font-size:1.1em;border-radius:16px;background:var(--danger);color:white;box-shadow:0 4px 16px rgba(239,68,68,0.2);margin-bottom:8px;">🚪 تسجيل الخروج</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                setTimeout(() => {
+                    // تفعيل قلب المعلومات فقط
+                    const flipCard = document.getElementById('flipCard');
+                    const cardInfoFlip = flipCard.querySelector('.card-info-flip');
+                    if (cardInfoFlip) {
+                        cardInfoFlip.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            flipCard.classList.toggle('flipped');
+                        });
+                    }
+                    // تفعيل رفع الصورة
+                    const profileInput = document.getElementById('profileInput');
+                    const profileImg = document.getElementById('profileImg');
+                    const cameraIcon = document.querySelector('.camera-icon');
+                    if (profileImg && profileInput && cameraIcon) {
+                        profileImg.onclick = (e) => {
+                            e.stopPropagation();
+                            profileInput.click();
+                        };
+                        cameraIcon.onclick = (e) => {
+                            e.stopPropagation();
+                            profileInput.click();
+                        };
+                        profileInput.onchange = function(e) {
+                            const file = e.target.files[0];
+                            if (file) {
+                                showLoadingSpinner('جاري رفع صورة المنتخب...');
+                                const storageRef = firebase.storage().ref();
+                                const fileRef = storageRef.child('user-profiles/' + user.phone + '_profile_' + Date.now() + '.webp');
+                                const uploadTask = fileRef.put(file);
+                                uploadTask.on('state_changed',
+                                    (snapshot) => {
+                                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                                        document.getElementById('progressBar').style.width = progress + '%';
+                                        document.getElementById('uploadPercentage').textContent = Math.floor(progress) + '%';
+                                    },
+                                    (error) => {
+                                        hideLoadingSpinner();
+                                        showAlert('فشل رفع الصورة: ' + error.message, 'error');
+                                    },
+                                    () => {
+                                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                                            hideLoadingSpinner();
+                                            document.getElementById('profileImg').src = downloadURL;
+                                            user.profileImg = downloadURL;
+                                            let users = JSON.parse(localStorage.getItem('users') || '[]');
+                                            let idx = users.findIndex(u => u.phone === user.phone);
+                                            if (idx !== -1) {
+                                                users[idx].profileImg = downloadURL;
+                                                localStorage.setItem('users', JSON.stringify(users));
+                                            }
+                                            localStorage.setItem('currentUser', JSON.stringify(user));
+                                            if (db) {
+                                                db.ref('users/' + user.phone + '/profileImg').set(downloadURL);
+                                            }
+                                            showAlert('تم رفع الصورة بنجاح! 📸');
+                                        });
+                                    }
+                                );
+                            }
+                        };
+                    }
+                }, 100);
+            }
+
+        // تسجيل الخروج
+        function logoutUser() {
+            if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+                localStorage.removeItem('currentUser');
+                showAlert('تم تسجيل الخروج بنجاح! 👋');
+                setTimeout(() => renderLogin(), 1000);
+            }
+        }
+
+        // التحقق من المستخدم الحالي
+        const currentUser = localStorage.getItem('currentUser');
+        if (currentUser) {
+            renderUserData(JSON.parse(currentUser));
+        } else {
+            if (typeof db !== 'undefined' && db) {
+                db.ref('users').once('value').then(snapshot => {
+                    const users = snapshot.val() ? Object.values(snapshot.val()) : [];
+                    localStorage.setItem('users', JSON.stringify(users));
+                    renderLogin();
+                }).catch(err => {
+                    console.error('خطأ في جلب البيانات:', err);
+                    renderLogin();
+                });
+            } else {
+                renderLogin();
+            }
+        }
+    </script>
+</body>
+</html>
