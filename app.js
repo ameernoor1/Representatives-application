@@ -95,6 +95,7 @@ styleHeader.innerHTML = `
 document.head.appendChild(styleHeader);
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
+const storage = firebase.storage ? firebase.storage() : null;
 
 // Candidates List
 const CANDIDATES = [
@@ -292,29 +293,33 @@ function loadData() {
 
     // Listen for new users
     database.ref('users').on('child_added', (snapshot) => {
-        if (Object.keys(allUsers).length > 0) {
-            const user = snapshot.val();
-            if (shouldShowNotification(user)) {
-                addNotification({
-                    type: 'new_user',
-                    message: `مستخدم جديد: ${user.fullName}`,
-                    user: user,
-                    timestamp: Date.now()
-                });
-            }
+        const user = snapshot.val();
+        // تحقق من عدم تكرار الإشعار لنفس المستخدم
+        if (!notifications.some(n => n.user && n.user.phone === user.phone && n.type === 'new_user')) {
+            addNotification({
+                type: 'new_user',
+                message: `مستخدم جديد: ${user.fullName}`,
+                user: user,
+                timestamp: Date.now()
+            });
         }
+        updateNotifications();
     });
 
     // Listen for voted users
     database.ref('users').on('child_changed', (snapshot) => {
         const user = snapshot.val();
-        if (user.images && user.images.front && shouldShowNotification(user)) {
-            addNotification({
-                type: 'voted',
-                message: `تم الانتخاب: ${user.fullName}`,
-                user: user,
-                timestamp: Date.now()
-            });
+        if (user.images && user.images.front) {
+            // تحقق من عدم تكرار إشعار التصويت لنفس المستخدم
+            if (!notifications.some(n => n.user && n.user.phone === user.phone && n.type === 'voted')) {
+                addNotification({
+                    type: 'voted',
+                    message: `تم الانتخاب: ${user.fullName}`,
+                    user: user,
+                    timestamp: Date.now()
+                });
+            }
+            updateNotifications();
         }
     });
 }
@@ -386,10 +391,10 @@ function calculateStatistics() {
     
     return {
         totalUsers: users.length,
-        individuals: users.filter(u => u.type === 'individual').length,
-        families: users.filter(u => u.type === 'family').length,
-        voted: users.filter(u => u.images && u.images.front).length,
-        notVoted: users.filter(u => !u.images || !u.images.front).length,
+    individuals: users.filter(u => u.individualCount === 1).length,
+    families: users.filter(u => u.individualCount > 1).length,
+    voted: users.filter(u => u.profileImg && u.profileImg.trim() !== "").length,
+    notVoted: users.filter(u => !u.profileImg || u.profileImg.trim() === "").length,
         male: users.filter(u => u.gender === 'ذكر').length,
         female: users.filter(u => u.gender === 'أنثى').length,
         districts: {}
@@ -425,8 +430,17 @@ function updateStatistics() {
                 <span class="stat-icon">👨‍👩‍👧‍👦</span>
             </div>
             <div class="stat-title">المستخدمون العائلات</div>
-            <div class="stat-value">${stats.families}</div>
+            <div class="stat-value">${stats.families} +${Object.values(filteredUsers).reduce((sum, u) => sum + (u.individualCount > 1 ? u.individualCount : 0), 0)}</div>
             <div class="stat-footer">مسجل كعائلة</div>
+        </div>
+
+        <div class="stat-card" onclick="filterBy('total-individuals')">
+            <div class="stat-header">
+                <span class="stat-icon">🧮</span>
+            </div>
+            <div class="stat-title">إجمالي الأفراد</div>
+            <div class="stat-value">${Object.values(filteredUsers).reduce((sum, u) => sum + (u.individualCount > 1 ? u.individualCount : 1), 0)}</div>
+            <div class="stat-footer">مجموع المستخدمين والأفراد</div>
         </div>
 
         <div class="stat-card" onclick="filterBy('voted')">
@@ -489,7 +503,25 @@ function updateDistrictsList() {
 function updateUsersGrid() {
     const usersGrid = document.getElementById('usersGrid');
     const users = Object.values(displayedUsers);
-    
+
+    // زر إضافة مستخدم جديد للمدير فقط (زر عائم في أسفل يسار النافذة)
+    let addUserBtnHtml = '';
+    if (currentUser && currentUser.type === 'admin') {
+        addUserBtnHtml = '<button class="floating-add-btn" onclick="showAddUserModal()"><i class="fas fa-user-plus"></i></button>';
+        if (!document.getElementById('floatingAddUserBtn')) {
+            var btn = document.createElement('button');
+            btn.id = 'floatingAddUserBtn';
+            btn.className = 'floating-add-btn';
+            btn.innerHTML = '<i class="fas fa-user-plus"></i>';
+            btn.onclick = showAddUserModal;
+            btn.style = 'position: fixed; left: 32px; bottom: 32px; z-index: 9999; background: var(--success-color); color: white; font-size: 2rem; width: 64px; height: 64px; border-radius: 50%; box-shadow: var(--shadow-lg); display: flex; align-items: center; justify-content: center; border: none; cursor: pointer;';
+            document.body.appendChild(btn);
+        }
+    } else {
+        var oldBtn = document.getElementById('floatingAddUserBtn');
+        if (oldBtn) oldBtn.remove();
+    }
+
     if (users.length === 0) {
         usersGrid.innerHTML = `
             <div class="empty-state">
@@ -500,83 +532,149 @@ function updateUsersGrid() {
         `;
         return;
     }
-    
+
     usersGrid.innerHTML = users.map(user => {
-    const hasVoted = user.profileImg && user.profileImg.trim() !== "";
+        const hasVoted = user.profileImg && user.profileImg.trim() !== "";
         let candidateName = 'غير محدد';
         if (user.candidateId && candidatesData[user.candidateId]) {
             candidateName = candidatesData[user.candidateId].name;
         } else if (user.candidate) {
             candidateName = user.candidate;
         }
-        
-        return `
-            <div class="user-card">
-                <div class="user-card-header">
-                    <div class="user-avatar-large">${user.fullName.charAt(0)}</div>
-                    <div class="user-status">
-                        <span class="status-badge ${hasVoted ? 'status-voted' : 'status-new'}">
-                            <i class="fas ${hasVoted ? 'fa-check-circle' : 'fa-user-plus'}"></i>
-                            ${hasVoted ? 'تم الانتخاب' : 'مستخدم جديد'}
-                        </span>
-                        ${currentUser.type === 'admin' ? `<input type="checkbox" class="checkbox-select" data-phone="${user.phone}" onchange="toggleCardSelection('${user.phone}')">` : ''}
-                    </div>
-                </div>
-                
-                <div class="user-info-section">
-                    <div class="user-name">${user.fullName}</div>
-                    <div class="user-details">
-                        <div class="user-detail-item">
-                            <i class="fas fa-phone"></i>
-                            <span>${user.phone}</span>
-                        </div>
-                        <div class="user-detail-item">
-                            <i class="fas fa-user-tie"></i>
-                            <span>${candidateName}</span>
-                        </div>
-                        <div class="user-detail-item">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <span>${user.district || 'غير محدد'}</span>
-                        </div>
-                        <div class="user-detail-item">
-                            <i class="fas fa-school"></i>
-                            <span>${user.school || 'غير محدد'}</span>
-                        </div>
-                        ${user.gender ? `
-                        <div class="user-detail-item">
-                            <i class="fas fa-venus-mars"></i>
-                            <span>${user.gender}</span>
-                        </div>
-                        ` : ''}
-                        ${user.type ? `
-                        <div class="user-detail-item">
-                            <i class="fas fa-id-card"></i>
-                            <span>${user.type === 'individual' ? 'فرد' : 'عائلة'}</span>
-                        </div>
-                        ` : ''}
-                    </div>
-                </div>
-                
-                ${hasVoted && user.images.front ? `
-                <div class="vote-image-container">
-                    <img src="${user.images.front}" alt="صورة التصويت" class="vote-image" onclick="viewImage('${user.images.front}')">
-                </div>
-                ` : ''}
-                
-                <div class="user-actions">
-                    <button class="action-btn action-btn-view" onclick="viewUserDetails('${user.phone}')">
-                        <i class="fas fa-eye"></i> عرض
-                    </button>
-                    <button class="action-btn action-btn-whatsapp" onclick="sendWhatsapp('${user.phone}')">
-                        <i class="fab fa-whatsapp"></i> واتساب
-                    </button>
-
-                </div>
-            </div>
-        `;
+        // صورة المستخدم: profileImg أو images.front
+        let userImg = user.profileImg && user.profileImg.trim() !== '' ? user.profileImg : (user.images && user.images.front ? user.images.front : '');
+        // صورة الانتخاب: images.front فقط
+        let voteImg = user.images && user.images.front ? user.images.front : '';
+        return '<div class="user-card">' +
+            '<div class="user-card-header">' +
+                (userImg ? '<img src="' + userImg + '" class="user-avatar-large" alt="صورة المستخدم" style="object-fit:cover;border-radius:50%;width:48px;height:48px;">' : '<div class="user-avatar-large">' + user.fullName.charAt(0) + '</div>') +
+                '<div class="user-status">' +
+                    '<span class="status-badge ' + (hasVoted ? 'status-voted' : 'status-new') + '">' +
+                        '<i class="fas ' + (hasVoted ? 'fa-check-circle' : 'fa-user-plus') + '"></i>' +
+                        (hasVoted ? 'تم الانتخاب' : 'مستخدم جديد') +
+                    '</span>' +
+                    (currentUser.type === 'admin' ? '<input type="checkbox" class="checkbox-select" data-phone="' + user.phone + '" onchange="toggleCardSelection(\'' + user.phone + '\')">' : '') +
+                '</div>' +
+            '</div>' +
+            '<div class="user-info-section">' +
+                '<div class="user-name">' + user.fullName + '</div>' +
+                '<div class="user-details">' +
+                    '<div class="user-detail-item"><i class="fas fa-phone"></i><span>' + user.phone + '</span></div>' +
+                    '<div class="user-detail-item"><i class="fas fa-user-tie"></i><span>' + candidateName + '</span></div>' +
+                    '<div class="user-detail-item"><i class="fas fa-map-marker-alt"></i><span>' + (user.district || 'غير محدد') + '</span></div>' +
+                    '<div class="user-detail-item"><i class="fas fa-school"></i><span>' + (user.school || 'غير محدد') + '</span></div>' +
+                    (user.gender ? '<div class="user-detail-item"><i class="fas fa-venus-mars"></i><span>' + user.gender + '</span></div>' : '') +
+                    (user.type ? '<div class="user-detail-item"><i class="fas fa-id-card"></i><span>' + (user.type === 'individual' ? 'فرد' : 'عائلة') + '</span></div>' : '') +
+                '</div>' +
+            '</div>' +
+            (voteImg ? '<div class="vote-image-container"><img src="' + voteImg + '" alt="صورة التصويت" class="vote-image" onclick="viewImage(\'' + voteImg + '\')"></div>' : '') +
+            '<div class="user-actions">' +
+                '<button class="action-btn action-btn-view" onclick="viewUserDetails(\'' + user.phone + '\')"><i class="fas fa-eye"></i> عرض</button>' +
+                '<button class="action-btn action-btn-whatsapp" onclick="sendWhatsapp(\'' + user.phone + '\')"><i class="fab fa-whatsapp"></i> واتساب</button>' +
+            '</div>' +
+        '</div>';
     }).join('');
-    
+
     updateBulkActionsVisibility();
+}
+
+// عرض نموذج إضافة مستخدم جديد
+function showAddUserModal() {
+    var modal = document.getElementById('userModal');
+    // بناء خيارات القضاء
+    var districtOptions = DISTRICTS.map(d => `<option value="${d}">${d}</option>`).join('');
+    // بناء خيارات المرشحين
+    var candidateOptions = Object.values(candidatesData).map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+    modal.innerHTML = `
+        <div class="modal-content" style="background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%); border-radius: 18px; box-shadow: var(--shadow-lg);">
+            <div class="modal-header" style="background: var(--primary-dark); color: #fff; border-top-left-radius: 18px; border-top-right-radius: 18px; padding: 1.2rem 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+                <span class="modal-title" style="font-size: 1.5rem; font-weight: 700;">إضافة مستخدم جديد</span>
+                <button class="modal-close" onclick="closeModal()" style="font-size: 1.7rem; background: none; border: none; color: #fff; cursor: pointer;">&times;</button>
+            </div>
+            <form id="addUserForm" style="padding: 2rem; display: grid; gap: 1.2rem; background: #fff; border-bottom-left-radius: 18px; border-bottom-right-radius: 18px;">
+                <label style="font-weight:600;">الاسم الثلاثي:<input type="text" name="fullName" required class="form-input" style="margin-top:6px;"></label>
+                <label style="font-weight:600;">رقم الهاتف:<input type="text" name="phone" required class="form-input" style="margin-top:6px;"></label>
+                <label style="font-weight:600;">المدرسة / المركز:<input type="text" name="school" required class="form-input" style="margin-top:6px;"></label>
+                <label style="font-weight:600;">رقم المحطة:<input type="text" name="stationNumber" required class="form-input" style="margin-top:6px;"></label>
+                <label style="font-weight:600;">القضاء:
+                    <select name="district" class="form-select" required style="margin-top:6px;">
+                        <option value="">-- اختر القضاء --</option>
+                        ${districtOptions}
+                    </select>
+                </label>
+                <label style="font-weight:600;">الجنس:
+                    <select name="gender" class="form-select" required style="margin-top:6px;">
+                        <option value="ذكر">ذكر</option>
+                        <option value="أنثى">أنثى</option>
+                    </select>
+                </label>
+                <label style="font-weight:600;">اسم المرشح:
+                    <select name="candidate" class="form-select" required style="margin-top:6px;">
+                        <option value="">-- اختر المرشح --</option>
+                        ${candidateOptions}
+                    </select>
+                </label>
+                <label style="font-weight:600;">اسم الركيزة:<input type="text" name="parent" required class="form-input" style="margin-top:6px;"></label>
+                <label style="font-weight:600;">عدد أفراد الأسرة:<input type="number" name="individualCount" value="1" min="1" required class="form-input" style="margin-top:6px;"></label>
+                <label style="font-weight:600;">صورة أمامية:<br>
+                    <input type="file" name="frontImgFile" accept="image/*" required style="margin-top:6px;">
+                </label>
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button type="submit" class="action-btn action-btn-add" style="flex:1;background:var(--success-color);color:white;font-size:1.1rem;padding:0.8rem 0;border-radius:12px;">تسجيل المستخدم</button>
+                    <button type="button" class="action-btn" onclick="closeModal()" style="flex:1;background:#f5f5f5;color:#333;font-size:1.1rem;padding:0.8rem 0;border-radius:12px;">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    `;
+    modal.classList.add('active');
+    document.getElementById('addUserForm').onsubmit = function(e) {
+        e.preventDefault();
+        var form = e.target;
+        var newUser = {
+            fullName: form.fullName.value.trim(),
+            phone: form.phone.value.trim(),
+            school: form.school.value.trim(),
+            stationNumber: form.stationNumber.value.trim(),
+            district: form.district.value,
+            gender: form.gender.value,
+            candidate: form.candidate.value,
+            parent: form.parent.value.trim(),
+            individualCount: parseInt(form.individualCount.value) || 1,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            type: 'user',
+            images: {},
+            profileImg: ''
+        };
+
+        // رفع الصورة الأمامية فقط
+        var frontImgFile = form.frontImgFile.files[0];
+
+        function saveUserWithFrontImage(frontImgUrl) {
+            if (frontImgUrl) newUser.images.front = frontImgUrl;
+            database.ref('users/' + newUser.phone).set(newUser).then(() => {
+                showAlert('تمت إضافة المستخدم بنجاح!');
+                closeModal();
+                loadData();
+            }).catch(err => {
+                showAlert('حدث خطأ أثناء إضافة المستخدم: ' + err.message, 'error');
+            });
+        }
+
+        if (frontImgFile) {
+            var frontRef = firebase.storage().ref('voteImages/' + newUser.phone + '_' + Date.now());
+            frontRef.put(frontImgFile).then(snap => {
+                snap.ref.getDownloadURL().then(frontImgUrl => {
+                    saveUserWithFrontImage(frontImgUrl);
+                });
+            }).catch(err => {
+                showAlert('خطأ في رفع الصورة الأمامية: ' + err.message, 'error');
+                saveUserWithFrontImage(null);
+            });
+        } else {
+            saveUserWithFrontImage(null);
+        }
+    };
 }
 
 // Filter Functions
@@ -589,13 +687,13 @@ function filterBy(type) {
             break;
         case 'individuals':
             displayedUsers = {};
-            users.filter(u => u.type === 'individual').forEach(u => {
+            users.filter(u => u.individualCount === 1).forEach(u => {
                 displayedUsers[u.phone] = u;
             });
             break;
         case 'families':
             displayedUsers = {};
-            users.filter(u => u.type === 'family').forEach(u => {
+            users.filter(u => u.individualCount > 1).forEach(u => {
                 displayedUsers[u.phone] = u;
             });
             break;
@@ -607,7 +705,7 @@ function filterBy(type) {
             break;
         case 'not-voted':
             displayedUsers = {};
-            users.filter(u => !u.images || !u.images.front).forEach(u => {
+            users.filter(u => !u.profileImg || u.profileImg.trim() === "").forEach(u => {
                 displayedUsers[u.phone] = u;
             });
             break;
@@ -625,8 +723,15 @@ function filterBy(type) {
             break;
     }
     
+    const userPhones = Object.keys(displayedUsers);
+    if (userPhones.length === 1) {
+        viewUserDetails(userPhones[0]);
+        closeSidebar();
+        return;
+    }
     updateUsersGrid();
     closeSidebar();
+    scrollToUsersGrid();
 }
 
 function filterByDistrict(district) {
@@ -637,8 +742,15 @@ function filterByDistrict(district) {
             displayedUsers[u.phone] = u;
         });
     
+    const userPhones = Object.keys(displayedUsers);
+    if (userPhones.length === 1) {
+        viewUserDetails(userPhones[0]);
+        closeSidebar();
+        return;
+    }
     updateUsersGrid();
     closeSidebar();
+    scrollToUsersGrid();
 }
 
 function applyFilters() {
@@ -668,7 +780,23 @@ function applyFilters() {
         }
     });
     
+    const userPhones = Object.keys(displayedUsers);
+    if (userPhones.length === 1) {
+        viewUserDetails(userPhones[0]);
+        return;
+    }
     updateUsersGrid();
+    scrollToUsersGrid();
+}
+
+// دالة التمرير التلقائي إلى قسم البطاقات (يجب أن تكون معرفة في المستوى الأعلى)
+function scrollToUsersGrid() {
+    setTimeout(function() {
+        var grid = document.getElementById('usersGrid');
+        if (grid) {
+            grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, 200);
 }
 
 function resetFilters() {
@@ -683,30 +811,77 @@ function resetFilters() {
 // Search Function
 function performSearch() {
     const query = document.getElementById('searchInput').value.toLowerCase().trim();
-    
     if (!query) {
         displayedUsers = { ...filteredUsers };
         updateUsersGrid();
+        hideSearchResultsDropdown();
         return;
     }
-    
-    displayedUsers = {};
-    Object.values(filteredUsers).forEach(user => {
+    // بحث شامل في جميع الحقول المهمة
+    const results = Object.values(filteredUsers).filter(user => {
         const searchableText = `
-            ${user.fullName} 
-            ${user.phone} 
-            ${user.district || ''} 
+            ${user.fullName || ''}
+            ${user.phone || ''}
+            ${user.district || ''}
             ${user.school || ''}
             ${user.gender || ''}
-            ${candidatesData[user.candidateId]?.name || ''}
+            ${user.candidate || ''}
+            ${user.parent || ''}
+            ${user.stationNumber || ''}
+            ${user.nationalId || ''}
+            ${(candidatesData[user.candidateId]?.name || '')}
         `.toLowerCase();
-        
-        if (searchableText.includes(query)) {
-            displayedUsers[user.phone] = user;
-        }
+        return searchableText.includes(query);
     });
-    
-    updateUsersGrid();
+    showSearchResultsDropdown(results);
+}
+
+function showSearchResultsDropdown(results) {
+    let dropdown = document.getElementById('searchResultsDropdown');
+    if (!dropdown) {
+        dropdown = document.createElement('div');
+        dropdown.id = 'searchResultsDropdown';
+        dropdown.style.position = 'absolute';
+        dropdown.style.background = '#fff';
+        dropdown.style.border = '1px solid #ddd';
+        dropdown.style.width = '100%';
+        dropdown.style.zIndex = '1000';
+        dropdown.style.maxHeight = '300px';
+        dropdown.style.overflowY = 'auto';
+        dropdown.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+        dropdown.style.direction = 'rtl';
+        document.querySelector('.search-box').appendChild(dropdown);
+    }
+    dropdown.innerHTML = '';
+    if (results.length === 0) {
+        dropdown.innerHTML = '<div style="padding: 1rem; color: #888;">لا توجد نتائج</div>';
+        return;
+    }
+    results.forEach(user => {
+        const item = document.createElement('div');
+        item.className = 'search-result-item';
+        item.style.padding = '0.7rem 1rem';
+        item.style.cursor = 'pointer';
+        item.style.borderBottom = '1px solid #eee';
+        item.innerHTML = '<b>' + (user.fullName || user.phone) + '</b>' +
+            '<div style="font-size:0.95rem;color:#666;">' +
+                (user.candidate ? 'مرشح: ' + user.candidate + ' | ' : '') +
+                (user.district ? 'قضاء: ' + user.district + ' | ' : '') +
+                (user.school ? 'مدرسة: ' + user.school + ' | ' : '') +
+                (user.parent ? 'ركيزة: ' + user.parent + ' | ' : '') +
+                (user.stationNumber ? 'محطة: ' + user.stationNumber : '') +
+            '</div>';
+        item.onclick = function() {
+            hideSearchResultsDropdown();
+            viewUserDetails(user.phone);
+        };
+        dropdown.appendChild(item);
+    });
+}
+
+function hideSearchResultsDropdown() {
+    const dropdown = document.getElementById('searchResultsDropdown');
+    if (dropdown) dropdown.remove();
 }
 
 // User Actions
@@ -724,7 +899,7 @@ function viewUserDetails(phone) {
 
     // جلب جميع الحقول من بيانات المستخدم
     const details = [
-        { label: 'المرشح', icon: 'fa-user-tie', value: user.candidate || user.candidateName },
+            { label: 'المرشح', icon: 'fa-user-tie', value: user.candidate || user.candidateName || 'غير محدد' },
         { label: 'رقم الهاتف', icon: 'fa-phone', value: user.phone },
         { label: 'القضاء', icon: 'fa-map-marker-alt', value: user.district },
         { label: 'المدرسة', icon: 'fa-school', value: user.school },
@@ -755,17 +930,24 @@ function viewUserDetails(phone) {
             '<img src="' + user.images.front + '" style="width: 100%; border-radius: 12px; box-shadow: var(--shadow-md); cursor: pointer;" onclick="viewImage(\'' + user.images.front + '\')">' +
         '</div>';
     }
+    var isMobile = window.innerWidth <= 600;
+    var adminEditBtn = '';
+    if (currentUser.type === 'admin') {
+        adminEditBtn = '<button class="action-btn action-btn-edit" onclick="showEditUserModal(\'' + user.phone + '\')" style="flex: 1; background: var(--info-color); color: white;">' +
+            '<i class="fas fa-edit"></i>' + (isMobile ? '' : ' تعديل البيانات') +
+        '</button>';
+    }
     var adminDeleteBtn = '';
     if (currentUser.type === 'admin') {
         adminDeleteBtn = '<button class="action-btn action-btn-delete" onclick="deleteUser(\'' + user.phone + '\')" style="flex: 1;">' +
-            '<i class="fas fa-trash"></i> حذف المستخدم' +
+            '<i class="fas fa-trash"></i>' + (isMobile ? '' : ' حذف المستخدم') +
         '</button>';
     }
     const modalBody = document.getElementById('modalBody');
     modalBody.innerHTML =
         '<div style="text-align: center; margin-bottom: 2rem;">' +
             '<div style="width: 120px; height: 120px; margin: 0 auto 1rem; border-radius: 50%; background: linear-gradient(135deg, var(--primary-color), var(--primary-light)); display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem; font-weight: 700; box-shadow: var(--shadow-md); overflow: hidden;">' +
-                (hasVoted ? '<img src="' + user.profileImg + '" alt="صورة الانتخاب" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">' : user.fullName.charAt(0)) +
+                (hasVoted ? '<img src="' + user.profileImg + '" alt="صورة الانتخاب" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : user.fullName.charAt(0)) +
             '</div>' +
             '<h2 style="color: var(--primary-color); margin-bottom: 0.5rem;">' + user.fullName + '</h2>' +
             '<span class="status-badge ' + (hasVoted ? 'status-voted' : 'status-new') + '" style="display: inline-flex;">' +
@@ -782,11 +964,128 @@ function viewUserDetails(phone) {
         voteImageHtml +
         '<div style="display: flex; gap: 1rem; margin-top: 1.5rem;">' +
             '<button class="action-btn action-btn-whatsapp" onclick="sendWhatsapp(\'' + user.phone + '\')" style="flex: 1;">' +
-                '<i class="fab fa-whatsapp"></i> مراسلة واتساب' +
+                '<i class="fab fa-whatsapp"></i>' + (isMobile ? '' : ' مراسلة واتساب') +
             '</button>' +
+            adminEditBtn +
             adminDeleteBtn +
         '</div>';
     document.getElementById('userModal').classList.add('active');
+// نافذة تعديل بيانات المستخدم
+window.showEditUserModal = function(phone) {
+    const user = allUsers[phone];
+    if (!user) return;
+    let modal = document.getElementById('editUserModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'editUserModal';
+        modal.className = 'modal active';
+        document.body.appendChild(modal);
+    }
+        var isMobile = window.innerWidth <= 600;
+        modal.innerHTML = `
+            <div class="modal-content" style="background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%); border-radius: 18px; box-shadow: var(--shadow-lg); ${isMobile ? 'max-width:100vw;padding:0;' : ''}">
+                <div class="modal-header" style="background: var(--primary-dark); color: #fff; border-top-left-radius: 18px; border-top-right-radius: 18px; padding: 1.2rem 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+                    <span class="modal-title" style="font-size: 1.5rem; font-weight: 700;">تعديل بيانات المستخدم</span>
+                    <button class="modal-close" onclick="closeEditUserModal()" style="font-size: 1.7rem; background: none; border: none; color: #fff; cursor: pointer;">&times;</button>
+                </div>
+                <form id="editUserForm" style="${isMobile ? 'padding:1rem;' : 'padding:2rem;'} display: grid; gap: 1.2rem; background: #fff; border-bottom-left-radius: 18px; border-bottom-right-radius: 18px;">
+                    <input type="hidden" name="phone" value="${user.phone}">
+                    <div style="display: grid; grid-template-columns: ${isMobile ? '1fr' : '1fr 1fr'}; gap: 1.2rem;">
+                        <label style="font-weight:600;">الاسم الكامل:<input type="text" name="fullName" value="${user.fullName || ''}" required class="form-input" style="margin-top:6px;"></label>
+                        <label style="font-weight:600;">رقم الهاتف:<input type="text" name="phoneDisplay" value="${user.phone || ''}" disabled class="form-input" style="margin-top:6px;background:#f5f5f5;"></label>
+                        <label style="font-weight:600;">القضاء:<input type="text" name="district" value="${user.district || ''}" class="form-input" style="margin-top:6px;"></label>
+                        <label style="font-weight:600;">الجنس:
+                            <select name="gender" class="form-select" style="margin-top:6px;">
+                                <option value="ذكر" ${user.gender==='ذكر'?'selected':''}>ذكر</option>
+                                <option value="أنثى" ${user.gender==='أنثى'?'selected':''}>أنثى</option>
+                            </select>
+                        </label>
+                        <label style="font-weight:600;">عدد الأفراد:<input type="number" name="individualCount" value="${user.individualCount || 1}" min="1" class="form-input" style="margin-top:6px;"></label>
+                        <label style="font-weight:600;">رقم المحطة:<input type="text" name="stationNumber" value="${user.stationNumber || ''}" class="form-input" style="margin-top:6px;"></label>
+                        <label style="font-weight:600;">المرشح:<input type="text" name="candidate" value="${user.candidate || ''}" class="form-input" style="margin-top:6px;"></label>
+                        <label style="font-weight:600;">المدرسة:<input type="text" name="school" value="${user.school || ''}" class="form-input" style="margin-top:6px;"></label>
+                        <label style="font-weight:600;">اسم الركيزة:<input type="text" name="parent" value="${user.parent || ''}" class="form-input" style="margin-top:6px;"></label>
+                        <label style="font-weight:600;">رقم الهوية الوطنية:<input type="text" name="nationalId" value="${user.nationalId || ''}" class="form-input" style="margin-top:6px;"></label>
+                        <label style="font-weight:600;">صورة المستخدم:<br>
+                            <input type="file" name="profileImgFile" accept="image/*" style="margin-top:6px;">
+                            ${user.profileImg ? `<img src="${user.profileImg}" style="width:60px;height:60px;border-radius:8px;margin-top:8px;">` : ''}
+                        </label>
+                        <label style="font-weight:600;">صورة التصويت (أمامية):<br>
+                            <input type="file" name="frontImgFile" accept="image/*" style="margin-top:6px;">
+                            ${user.images && user.images.front ? `<img src="${user.images.front}" style="width:60px;height:60px;border-radius:8px;margin-top:8px;">` : ''}
+                        </label>
+                    </div>
+                    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap;">
+                        <button type="submit" class="action-btn action-btn-edit" style="flex:1;background:var(--success-color);color:white;font-size:1.1rem;padding:0.8rem 0;border-radius:12px;${isMobile ? 'min-width:48px;max-width:100vw;' : ''}">حفظ التعديلات</button>
+                        <button type="button" class="action-btn" onclick="closeEditUserModal()" style="flex:1;background:#f5f5f5;color:#333;font-size:1.1rem;padding:0.8rem 0;border-radius:12px;${isMobile ? 'min-width:48px;max-width:100vw;' : ''}">إلغاء</button>
+                    </div>
+                </form>
+            </div>
+        `;
+    modal.classList.add('active');
+        document.getElementById('editUserForm').onsubmit = async function(e) {
+            e.preventDefault();
+            const form = e.target;
+            let updatedUser = {
+                fullName: form.fullName.value,
+                district: form.district.value,
+                gender: form.gender.value,
+                individualCount: parseInt(form.individualCount.value),
+                stationNumber: form.stationNumber.value,
+                candidate: form.candidate.value,
+                school: form.school.value,
+                parent: form.parent.value,
+                nationalId: form.nationalId.value,
+                updatedAt: new Date().toISOString()
+            };
+            // رفع صورة المستخدم
+            const profileImgFile = form.profileImgFile.files[0];
+            if (profileImgFile) {
+                try {
+                    const storageRef = firebase.storage().ref();
+                    const imgRef = storageRef.child(`user-images/${user.phone}_profile_${Date.now()}`);
+                    await imgRef.put(profileImgFile);
+                    updatedUser.profileImg = await imgRef.getDownloadURL();
+                } catch (err) {
+                    alert('خطأ في رفع صورة المستخدم');
+                }
+            } else {
+                updatedUser.profileImg = user.profileImg || '';
+            }
+            // رفع صورة التصويت الأمامية
+            const frontImgFile = form.frontImgFile.files[0];
+            if (frontImgFile) {
+                try {
+                    const storageRef = firebase.storage().ref();
+                    const imgRef = storageRef.child(`user-images/${user.phone}_front_${Date.now()}`);
+                    await imgRef.put(frontImgFile);
+                    const frontUrl = await imgRef.getDownloadURL();
+                    updatedUser.images = { front: frontUrl };
+                } catch (err) {
+                    alert('خطأ في رفع صورة التصويت');
+                }
+            } else {
+                updatedUser.images = user.images || {};
+            }
+            database.ref('users/' + user.phone).update(updatedUser, function(error) {
+                if (error) {
+                    alert('حدث خطأ أثناء حفظ التعديلات');
+                } else {
+                    alert('تم حفظ التعديلات بنجاح');
+                    closeEditUserModal();
+                    loadData();
+                }
+            });
+        };
+}
+
+window.closeEditUserModal = function() {
+    const modal = document.getElementById('editUserModal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(()=>{modal.remove();},300);
+    }
+}
 }
 
 function viewImage(imageUrl) {
@@ -832,6 +1131,12 @@ function sendBulkWhatsapp() {
 
 // Notifications
 function addNotification(notification) {
+    // تحقق من الإشعارات الممسوحة
+    let clearedNotifs = JSON.parse(localStorage.getItem('clearedNotifications') || '[]');
+    // إذا كان الإشعار لنفس المستخدم ولنفس النوع وتم مسحه سابقاً، لا تضفه
+    if (clearedNotifs.some(n => n.user && n.user.phone === notification.user.phone && n.type === notification.type)) {
+        return;
+    }
     notifications.unshift(notification);
     if (notifications.length > 50) {
         notifications = notifications.slice(0, 50);
@@ -879,6 +1184,8 @@ function getTimeAgo(timestamp) {
 
 function clearNotifications() {
     if (confirm('هل تريد مسح جميع الإشعارات؟')) {
+        // حفظ الإشعارات الممسوحة في localStorage
+        localStorage.setItem('clearedNotifications', JSON.stringify(notifications));
         notifications = [];
         updateNotifications();
     }
