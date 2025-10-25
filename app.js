@@ -16,48 +16,79 @@ styleHeader.innerHTML = `
 @media (max-width: 600px) {
     .app-header {
         display: flex !important;
-        flex-direction: column !important;
-        align-items: stretch !important;
-        padding: 6px 2px !important;
-        font-size: 0.95rem !important;
-        gap: 2px !important;
-    }
-    .app-header-title {
-        width: 100%;
-        text-align: center;
-        font-size: 1.1rem !important;
-        font-weight: 800 !important;
-        margin-bottom: 2px !important;
-        letter-spacing: 0.5px;
-        color: #fff;
-        background: none;
-    }
-    .app-header-row {
-        display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
-        justify-content: space-between !important;
-        gap: 6px !important;
-        width: 100%;
+        justify-content: flex-start !important;
+        padding: 16px 10px !important;
+        font-size: 1.1rem !important;
+        min-width: 100vw !important;
+        background: var(--primary, #1a7b7f) !important;
+        box-shadow: 0 2px 12px rgba(26,123,127,0.10);
+        gap: 12px !important;
     }
-    .app-header-row > * {
-        margin: 0 2px !important;
-        flex-shrink: 1 !important;
+    .notification-bell, .notificationCount, .notification-icon {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 1.7rem !important;
+        min-width: 40px !important;
+        min-height: 40px !important;
+        padding: 8px !important;
+        margin-left: 0 !important;
+        margin-right: 8px !important;
+        background: #fff !important;
+        color: #1a7b7f !important;
+        border-radius: 50% !important;
+        box-shadow: 0 2px 8px rgba(26,123,127,0.10);
+        cursor: pointer !important;
+        transition: box-shadow 0.2s;
     }
-    .sidebar-menu, .sidebar-menu a {
-        font-size: 0.95rem !important;
-        padding: 6px 0 !important;
+    .app-header-title, .header-title {
+        display: block !important;
+        font-size: 1.1rem !important;
+        font-weight: 700 !important;
+        color: #fff !important;
+        margin-right: 8px !important;
+        margin-left: 8px !important;
+        letter-spacing: 0.5px !important;
     }
-    .user-avatar-large, .stat-icon {
-        width: 36px !important;
-        height: 36px !important;
+    /* إخفاء النصوص غير المطلوبة فقط */
+    .app-header-row, .app-title-main, .app-subtitle-main, .user-role, .user-name, .user-type-label, .user-info, .user-avatar, .header-left {
+        display: none !important;
+    }
+    .sidebar-menu-btn, .sidebar-menu, .menu-toggle {
         font-size: 1.3rem !important;
+        min-width: 36px !important;
+        min-height: 36px !important;
+        padding: 6px !important;
+        margin: 0 2px !important;
     }
-    .notificationCount, .notification-icon {
-        font-size: 1rem !important;
-        min-width: 22px !important;
-        min-height: 22px !important;
-        padding: 2px !important;
+    body, html {
+        min-width: 100vw !important;
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
+        background: linear-gradient(135deg, #f0f9f9 0%, #ffffff 50%, #f0f9f9 100%) !important;
+    }
+    #app, .content-area, .user-card-container, .main-content {
+        min-width: 100vw !important;
+        max-width: 100vw !important;
+        box-sizing: border-box !important;
+        padding: 0 !important;
+    }
+    /* تحسين المسافات بين العناصر في الواجهة */
+    .users-container, .stats-grid, .filters-container {
+        margin-top: 18px !important;
+        margin-bottom: 18px !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+    .users-grid {
+        gap: 18px !important;
+        padding: 0 4px !important;
+    }
+    .user-card {
+        margin-bottom: 18px !important;
+        padding: 10px 6px !important;
     }
 }
 `;
