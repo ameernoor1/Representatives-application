@@ -570,11 +570,7 @@ function updateUsersGrid() {
                     <button class="action-btn action-btn-whatsapp" onclick="sendWhatsapp('${user.phone}')">
                         <i class="fab fa-whatsapp"></i> واتساب
                     </button>
-                    ${currentUser.type === 'admin' ? `
-                    <button class="action-btn action-btn-delete" onclick="deleteUser('${user.phone}')">
-                        <i class="fas fa-trash"></i> حذف
-                    </button>
-                    ` : ''}
+
                 </div>
             </div>
         `;
@@ -725,140 +721,72 @@ function viewUserDetails(phone) {
         candidateName = user.candidate;
     }
     const hasVoted = user.profileImg && user.profileImg.trim() !== "";
-    
+
+    // جلب جميع الحقول من بيانات المستخدم
+    const details = [
+        { label: 'المرشح', icon: 'fa-user-tie', value: user.candidate || user.candidateName },
+        { label: 'رقم الهاتف', icon: 'fa-phone', value: user.phone },
+        { label: 'القضاء', icon: 'fa-map-marker-alt', value: user.district },
+        { label: 'المدرسة', icon: 'fa-school', value: user.school },
+        { label: 'الجنس', icon: 'fa-venus-mars', value: user.gender },
+        { label: 'اسم الركيزة', icon: 'fa-user-friends', value: user.parent },
+        { label: 'عدد الأفراد', icon: 'fa-users', value: user.individualCount },
+        { label: 'رقم المحطة', icon: 'fa-hashtag', value: user.stationNumber },
+        { label: 'تاريخ التسجيل', icon: 'fa-calendar', value: user.createdAt ? new Date(user.createdAt).toLocaleDateString('ar-IQ') : '' },
+        { label: 'تاريخ التحديث', icon: 'fa-calendar-day', value: user.updatedAt ? new Date(user.updatedAt).toLocaleDateString('ar-IQ') : '' },
+    ];
+
+    let detailsHtml = '';
+    details.filter(function(d) { return d.value; }).forEach(function(d) {
+        detailsHtml += '<div style="display: flex; align-items: center; gap: 1rem;">' +
+            '<i class="fas ' + d.icon + '" style="color: var(--primary-color); width: 30px;"></i>' +
+            '<div>' +
+                '<div style="color: var(--text-light); font-size: 0.9rem;">' + d.label + '</div>' +
+                '<div style="font-weight: 600;">' + d.value + '</div>' +
+            '</div>' +
+        '</div>';
+    });
+    var voteImageHtml = '';
+    if (hasVoted && user.images && user.images.front) {
+        voteImageHtml = '<div style="background: var(--bg-gradient-start); padding: 1.5rem; border-radius: 12px;">' +
+            '<h3 style="color: var(--success-color); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">' +
+                '<i class="fas fa-check-circle"></i> صورة التصويت' +
+            '</h3>' +
+            '<img src="' + user.images.front + '" style="width: 100%; border-radius: 12px; box-shadow: var(--shadow-md); cursor: pointer;" onclick="viewImage(\'' + user.images.front + '\')">' +
+        '</div>';
+    }
+    var adminDeleteBtn = '';
+    if (currentUser.type === 'admin') {
+        adminDeleteBtn = '<button class="action-btn action-btn-delete" onclick="deleteUser(\'' + user.phone + '\')" style="flex: 1;">' +
+            '<i class="fas fa-trash"></i> حذف المستخدم' +
+        '</button>';
+    }
     const modalBody = document.getElementById('modalBody');
-    modalBody.innerHTML = `
-        <div style="text-align: center; margin-bottom: 2rem;">
-            <div style="width: 120px; height: 120px; margin: 0 auto 1rem; border-radius: 50%; background: linear-gradient(135deg, var(--primary-color), var(--primary-light)); display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem; font-weight: 700; box-shadow: var(--shadow-md); overflow: hidden;">
-                ${hasVoted ? `<img src='${user.profileImg}' alt='صورة الانتخاب' style='width:100%;height:100%;object-fit:cover;border-radius:50%;'>` : user.fullName.charAt(0)}
-            </div>
-            <h2 style="color: var(--primary-color); margin-bottom: 0.5rem;">${user.fullName}</h2>
-            <span class="status-badge ${hasVoted ? 'status-voted' : 'status-new'}" style="display: inline-flex;">
-                <i class="fas ${hasVoted ? 'fa-check-circle' : 'fa-user-plus'}"></i>
-                ${hasVoted ? 'تم الانتخاب' : 'لم ينتخب بعد'}
-            </span>
-        </div>
-        
-        <div style="display: grid; gap: 1.5rem;">
-            <div style="background: var(--bg-gradient-start); padding: 1.5rem; border-radius: 12px;">
-                <h3 style="color: var(--primary-color); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="fas fa-info-circle"></i> المعلومات الأساسية
-                </h3>
-                <div style="display: grid; gap: 1rem;">
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <i class="fas fa-phone" style="color: var(--primary-color); width: 30px;"></i>
-                        <div>
-                            <div style="color: var(--text-light); font-size: 0.9rem;">رقم الهاتف</div>
-                            <div style="font-weight: 600;">${user.phone}</div>
-                        </div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <i class="fas fa-user-tie" style="color: var(--primary-color); width: 30px;"></i>
-                        <div>
-                            <div style="color: var(--text-light); font-size: 0.9rem;">المرشح</div>
-                            <div style="font-weight: 600;">${candidateName}</div>
-                        </div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <i class="fas fa-map-marker-alt" style="color: var(--primary-color); width: 30px;"></i>
-                        <div>
-                            <div style="color: var(--text-light); font-size: 0.9rem;">القضاء</div>
-                            <div style="font-weight: 600;">${user.district || 'غير محدد'}</div>
-                        </div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <i class="fas fa-school" style="color: var(--primary-color); width: 30px;"></i>
-                        <div>
-                            <div style="color: var(--text-light); font-size: 0.9rem;">المدرسة</div>
-                            <div style="font-weight: 600;">${user.school || 'غير محدد'}</div>
-                        </div>
-                    </div>
-                    ${user.gender ? `
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <i class="fas fa-venus-mars" style="color: var(--primary-color); width: 30px;"></i>
-                        <div>
-                            <div style="color: var(--text-light); font-size: 0.9rem;">الجنس</div>
-                            <div style="font-weight: 600;">${user.gender}</div>
-                        </div>
-                    </div>
-                    ` : ''}
-                    ${user.type ? `
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <i class="fas fa-id-card" style="color: var(--primary-color); width: 30px;"></i>
-                        <div>
-                            <div style="color: var(--text-light); font-size: 0.9rem;">النوع</div>
-                            <div style="font-weight: 600;">${user.type === 'individual' ? 'فرد' : 'عائلة'}</div>
-                        </div>
-                    </div>
-                    ` : ''}
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <i class="fas fa-calendar" style="color: var(--primary-color); width: 30px;"></i>
-                        <div>
-                            <div style="color: var(--text-light); font-size: 0.9rem;">تاريخ التسجيل</div>
-                            <div style="font-weight: 600;">${new Date(user.createdAt).toLocaleDateString('ar-IQ')}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            ${hasVoted && user.images.front ? `
-            <div style="background: var(--bg-gradient-start); padding: 1.5rem; border-radius: 12px;">
-                <h3 style="color: var(--success-color); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="fas fa-check-circle"></i> صورة التصويت
-                </h3>
-                <img src="${user.images.front}" style="width: 100%; border-radius: 12px; box-shadow: var(--shadow-md); cursor: pointer;" onclick="viewImage('${user.images.front}')">
-            </div>
-            ` : ''}
-            
-            <div style="display: flex; gap: 1rem;">
-                <button class="action-btn action-btn-whatsapp" onclick="sendWhatsapp('${user.phone}')" style="flex: 1;">
-                    <i class="fab fa-whatsapp"></i> مراسلة واتساب
-                </button>
-                ${currentUser.type === 'admin' ? `
-                <button class="action-btn action-btn-delete" onclick="deleteUser('${user.phone}')" style="flex: 1;">
-                    <i class="fas fa-trash"></i> حذف المستخدم
-                </button>
-                ` : ''}
-            </div>
-        </div>
-    `;
-    
+    modalBody.innerHTML =
+        '<div style="text-align: center; margin-bottom: 2rem;">' +
+            '<div style="width: 120px; height: 120px; margin: 0 auto 1rem; border-radius: 50%; background: linear-gradient(135deg, var(--primary-color), var(--primary-light)); display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem; font-weight: 700; box-shadow: var(--shadow-md); overflow: hidden;">' +
+                (hasVoted ? '<img src="' + user.profileImg + '" alt="صورة الانتخاب" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">' : user.fullName.charAt(0)) +
+            '</div>' +
+            '<h2 style="color: var(--primary-color); margin-bottom: 0.5rem;">' + user.fullName + '</h2>' +
+            '<span class="status-badge ' + (hasVoted ? 'status-voted' : 'status-new') + '" style="display: inline-flex;">' +
+                '<i class="fas ' + (hasVoted ? 'fa-check-circle' : 'fa-user-plus') + '"></i>' +
+                (hasVoted ? 'تم الانتخاب' : 'لم ينتخب بعد') +
+            '</span>' +
+        '</div>' +
+        '<div style="background: var(--bg-gradient-start); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;">' +
+            '<h3 style="color: var(--primary-color); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">' +
+                '<i class="fas fa-info-circle"></i> جميع التفاصيل' +
+            '</h3>' +
+            '<div style="display: grid; gap: 1rem;">' + detailsHtml + '</div>' +
+        '</div>' +
+        voteImageHtml +
+        '<div style="display: flex; gap: 1rem; margin-top: 1.5rem;">' +
+            '<button class="action-btn action-btn-whatsapp" onclick="sendWhatsapp(\'' + user.phone + '\')" style="flex: 1;">' +
+                '<i class="fab fa-whatsapp"></i> مراسلة واتساب' +
+            '</button>' +
+            adminDeleteBtn +
+        '</div>';
     document.getElementById('userModal').classList.add('active');
-}
-
-function sendWhatsapp(phone) {
-    const user = allUsers[phone];
-    if (!user) return;
-    
-    const message = `مرحباً ${user.fullName}، نشكرك على تسجيلك في ائتلاف أساس العراق. صوتك اليوم مستقبلك غداً! 🇮🇶`;
-    let phoneNumber = phone;
-    // إضافة الرمز الدولي 964 إذا لم يكن موجوداً
-    if (!phoneNumber.startsWith('964')) {
-        phoneNumber = '964' + phoneNumber.replace(/^0+/, '');
-    }
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-}
-
-function deleteUser(phone) {
-    if (!currentUser || currentUser.type !== 'admin') {
-        showAlert('غير مصرح لك بحذف المستخدمين', 'error');
-        return;
-    }
-    
-    const user = allUsers[phone];
-    if (!user) return;
-    
-    if (confirm(`هل أنت متأكد من حذف المستخدم: ${user.fullName}؟`)) {
-        database.ref(`users/${phone}`).remove()
-            .then(() => {
-                showAlert('تم حذف المستخدم بنجاح', 'success');
-                closeModal();
-            })
-            .catch(error => {
-                showAlert('حدث خطأ أثناء الحذف: ' + error.message, 'error');
-            });
-    }
 }
 
 function viewImage(imageUrl) {
@@ -886,14 +814,14 @@ function sendBulkWhatsapp() {
     if (selectedCards.size === 0) return;
     
     const users = Array.from(selectedCards).map(phone => allUsers[phone]).filter(u => u);
-    const message = `مرحباً، نشكركم على تسجيلكم في ائتلاف أساس العراق. صوتكم اليوم مستقبلكم غداً! 🇮🇶`;
+    var message = 'مرحباً، نشكركم على تسجيلكم في ائتلاف أساس العراق. صوتكم اليوم مستقبلكم غداً! 🇮🇶';
     
     users.forEach(user => {
         let phoneNumber = user.phone;
         if (!phoneNumber.startsWith('964')) {
             phoneNumber = '964' + phoneNumber.replace(/^0+/, '');
         }
-        const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    var whatsappUrl = 'https://wa.me/' + phoneNumber + '?text=' + encodeURIComponent(message);
         window.open(whatsappUrl, '_blank');
     });
     
@@ -918,36 +846,35 @@ function updateNotifications() {
     notificationCount.textContent = notifications.length;
     
     if (notifications.length === 0) {
-        notificationList.innerHTML = `
-            <div class="empty-state" style="padding: 2rem;">
-                <i class="fas fa-bell-slash"></i>
-                <div class="empty-state-title">لا توجد إشعارات</div>
-                <div class="empty-state-message">لا توجد إشعارات جديدة</div>
-            </div>
-        `;
+        notificationList.innerHTML =
+            '<div class="empty-state" style="padding: 2rem;">' +
+                '<i class="fas fa-bell-slash"></i>' +
+                '<div class="empty-state-title">لا توجد إشعارات</div>' +
+                '<div class="empty-state-message">لا توجد إشعارات جديدة</div>' +
+            '</div>';
         return;
     }
     
-    notificationList.innerHTML = notifications.map(notif => `
-        <div class="notification-item" onclick="viewUserDetails('${notif.user.phone}')">
-            <div class="notification-item-header">
-                <div class="notification-icon ${notif.type === 'new_user' ? 'new-user' : 'voted'}">
-                    <i class="fas ${notif.type === 'new_user' ? 'fa-user-plus' : 'fa-check-circle'}"></i>
-                </div>
-                <div class="notification-message">${notif.message}</div>
-            </div>
-            <div class="notification-time">${getTimeAgo(notif.timestamp)}</div>
-        </div>
-    `).join('');
+    notificationList.innerHTML = notifications.map(function(notif) {
+        return '<div class="notification-item" onclick="viewUserDetails(\'' + notif.user.phone + '\')">' +
+            '<div class="notification-item-header">' +
+                '<div class="notification-icon ' + (notif.type === 'new_user' ? 'new-user' : 'voted') + '">' +
+                    '<i class="fas ' + (notif.type === 'new_user' ? 'fa-user-plus' : 'fa-check-circle') + '"></i>' +
+                '</div>' +
+                '<div class="notification-message">' + notif.message + '</div>' +
+            '</div>' +
+            '<div class="notification-time">' + getTimeAgo(notif.timestamp) + '</div>' +
+        '</div>';
+    }).join('');
 }
 
 function getTimeAgo(timestamp) {
     const seconds = Math.floor((Date.now() - timestamp) / 1000);
     
     if (seconds < 60) return 'الآن';
-    if (seconds < 3600) return `منذ ${Math.floor(seconds / 60)} دقيقة`;
-    if (seconds < 86400) return `منذ ${Math.floor(seconds / 3600)} ساعة`;
-    return `منذ ${Math.floor(seconds / 86400)} يوم`;
+    if (seconds < 3600) return 'منذ ' + Math.floor(seconds / 60) + ' دقيقة';
+    if (seconds < 86400) return 'منذ ' + Math.floor(seconds / 3600) + ' ساعة';
+    return 'منذ ' + Math.floor(seconds / 86400) + ' يوم';
 }
 
 function clearNotifications() {
@@ -978,16 +905,15 @@ function toggleNotifications() {
 }
 
 function showUserMenu() {
-    const menu = `
-        <div style="position: absolute; top: 60px; left: 20px; background: white; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 1rem; min-width: 200px; z-index: 2000;">
-            <div style="padding: 0.75rem; cursor: pointer; border-radius: 8px; transition: var(--transition);" onmouseover="this.style.background='var(--bg-gradient-start)'" onmouseout="this.style.background=''" onclick="showPage('settings')">
-                <i class="fas fa-cog"></i> الإعدادات
-            </div>
-            <div style="padding: 0.75rem; cursor: pointer; border-radius: 8px; transition: var(--transition);" onmouseover="this.style.background='var(--bg-gradient-start)'" onmouseout="this.style.background=''" onclick="logout()">
-                <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
-            </div>
-        </div>
-    `;
+    const menu =
+        '<div style="position: absolute; top: 60px; left: 20px; background: white; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 1rem; min-width: 200px; z-index: 2000;">' +
+            '<div style="padding: 0.75rem; cursor: pointer; border-radius: 8px; transition: var(--transition);" onmouseover="this.style.background=\'var(--bg-gradient-start)\'" onmouseout="this.style.background=\'\'" onclick="showPage(\'settings\')">' +
+                '<i class="fas fa-cog"></i> الإعدادات' +
+            '</div>' +
+            '<div style="padding: 0.75rem; cursor: pointer; border-radius: 8px; transition: var(--transition);" onmouseover="this.style.background=\'var(--bg-gradient-start)\'" onmouseout="this.style.background=\'\'" onclick="logout()">' +
+                '<i class="fas fa-sign-out-alt"></i> تسجيل الخروج' +
+            '</div>' +
+        '</div>';
     // This is a simple implementation - in production, you'd want a more robust menu system
 }
 
@@ -1049,14 +975,13 @@ function showPage(pageName) {
 function loadUsersPage() {
     const content = document.getElementById('usersContent');
     content.classList.add('active');
-    content.innerHTML = `
-        <div class="users-container">
-            <h2 style="color: var(--primary-color); margin-bottom: 2rem;">
-                <i class="fas fa-users"></i> جميع المستخدمين
-            </h2>
-            <div class="users-grid" id="allUsersGrid"></div>
-        </div>
-    `;
+    content.innerHTML =
+        '<div class="users-container">' +
+            '<h2 style="color: var(--primary-color); margin-bottom: 2rem;">' +
+                '<i class="fas fa-users"></i> جميع المستخدمين' +
+            '</h2>' +
+            '<div class="users-grid" id="allUsersGrid"></div>' +
+        '</div>';
     
     // Display all users
     const allUsersGrid = document.getElementById('allUsersGrid');
@@ -1069,25 +994,23 @@ function loadVotersPage() {
     
     const votedUsers = Object.values(filteredUsers).filter(u => u.images && u.images.front);
     
-    content.innerHTML = `
-        <div class="users-container">
-            <h2 style="color: var(--success-color); margin-bottom: 2rem;">
-                <i class="fas fa-check-circle"></i> المنتخبون (${votedUsers.length})
-            </h2>
-            <div class="users-grid" id="votersGrid"></div>
-        </div>
-    `;
+    content.innerHTML =
+        '<div class="users-container">' +
+            '<h2 style="color: var(--success-color); margin-bottom: 2rem;">' +
+                '<i class="fas fa-check-circle"></i> المنتخبون (' + votedUsers.length + ')' +
+            '</h2>' +
+            '<div class="users-grid" id="votersGrid"></div>' +
+        '</div>';
     
     const votersGrid = document.getElementById('votersGrid');
     
     if (votedUsers.length === 0) {
-        votersGrid.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-vote-yea"></i>
-                <div class="empty-state-title">لا يوجد منتخبون</div>
-                <div class="empty-state-message">لم يقم أي مستخدم بالتصويت بعد</div>
-            </div>
-        `;
+        votersGrid.innerHTML =
+            '<div class="empty-state">' +
+                '<i class="fas fa-vote-yea"></i>' +
+                '<div class="empty-state-title">لا يوجد منتخبون</div>' +
+                '<div class="empty-state-message">لم يقم أي مستخدم بالتصويت بعد</div>' +
+            '</div>';
         return;
     }
     
@@ -1104,109 +1027,97 @@ function loadReportsPage() {
     const stats = calculateStatistics();
     const users = Object.values(filteredUsers);
     
-    content.innerHTML = `
-        <div style="display: grid; gap: 2rem;">
-            <div class="settings-section">
-                <h2 class="settings-title">
-                    <i class="fas fa-chart-bar"></i> تقارير وتحليلات شاملة
-                </h2>
-                
-                <div class="stats-grid" style="margin-bottom: 2rem;">
-                    <div class="stat-card">
-                        <div class="stat-icon">👥</div>
-                        <div class="stat-title">إجمالي المستخدمين</div>
-                        <div class="stat-value">${stats.totalUsers}</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">✅</div>
-                        <div class="stat-title">تم الانتخاب</div>
-                        <div class="stat-value">${stats.voted}</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">⏳</div>
-                        <div class="stat-title">لم ينتخب</div>
-                        <div class="stat-value">${stats.notVoted}</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">📊</div>
-                        <div class="stat-title">نسبة الانتخاب</div>
-                        <div class="stat-value">${stats.totalUsers > 0 ? Math.round((stats.voted / stats.totalUsers) * 100) : 0}%</div>
-                    </div>
-                </div>
-                
-                <h3 style="color: var(--primary-color); margin: 2rem 0 1rem;">التوزيع حسب المرشح</h3>
-                <div style="display: grid; gap: 1rem;">
-                    ${(() => {
-                        const BASE_USERS = 5000;
-                        return Object.values(candidatesData).map(candidate => {
-                            const count = users.filter(u =>
-                                (u.candidateId === candidate.id) ||
-                                (u.candidate && u.candidate === candidate.name)
-                            ).length;
-                            const percentage = count > 0 ? ((count / BASE_USERS) * 100).toFixed(2) : '0.00';
-                            return `
-                                <div style="background: var(--bg-gradient-start); padding: 1.5rem; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
-                                    <div>
-                                        <div style="font-weight: 600; color: var(--text-dark); margin-bottom: 0.5rem;">${candidate.name}</div>
-                                        <div style="color: var(--text-light); font-size: 0.9rem;">عدد المستخدمين: ${count}</div>
-                                    </div>
-                                    <div style="font-size: 2rem; font-weight: 700; color: var(--primary-color);">${percentage}%</div>
-                                </div>
-                            `;
-                        }).join('');
-                    })()}
-                </div>
-                
-                <h3 style="color: var(--primary-color); margin: 2rem 0 1rem;">التوزيع حسب القضاء</h3>
-                <div style="display: grid; gap: 1rem;">
-                    ${DISTRICTS.map(district => {
-                        const BASE_USERS = 5000;
-                        const count = users.filter(u => u.district === district).length;
-                        const percentage = count > 0 ? ((count / BASE_USERS) * 100).toFixed(2) : '0.00';
-                        return `
-                            <div style="background: var(--bg-gradient-start); padding: 1.5rem; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <div style="font-weight: 600; color: var(--text-dark); margin-bottom: 0.5rem;">${district}</div>
-                                    <div style="color: var(--text-light); font-size: 0.9rem;">عدد المستخدمين: ${count}</div>
-                                </div>
-                                <div style="font-size: 2rem; font-weight: 700; color: var(--primary-color);">${percentage}%</div>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            </div>
-        </div>
-    `;
+    var candidateStatsHtml = '';
+    var BASE_USERS = 5000;
+    Object.values(candidatesData).forEach(function(candidate) {
+        var count = users.filter(function(u) {
+            return (u.candidateId === candidate.id) || (u.candidate && u.candidate === candidate.name);
+        }).length;
+        var percentage = count > 0 ? ((count / BASE_USERS) * 100).toFixed(2) : '0.00';
+        candidateStatsHtml += '<div style="background: var(--bg-gradient-start); padding: 1.5rem; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">' +
+            '<div>' +
+                '<div style="font-weight: 600; color: var(--text-dark); margin-bottom: 0.5rem;">' + candidate.name + '</div>' +
+                '<div style="color: var(--text-light); font-size: 0.9rem;">عدد المستخدمين: ' + count + '</div>' +
+            '</div>' +
+            '<div style="font-size: 2rem; font-weight: 700; color: var(--primary-color);">' + percentage + '%</div>' +
+        '</div>';
+    });
+
+    var districtStatsHtml = '';
+    DISTRICTS.forEach(function(district) {
+        var count = users.filter(function(u) { return u.district === district; }).length;
+        var percentage = count > 0 ? ((count / BASE_USERS) * 100).toFixed(2) : '0.00';
+        districtStatsHtml += '<div style="background: var(--bg-gradient-start); padding: 1.5rem; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">' +
+            '<div>' +
+                '<div style="font-weight: 600; color: var(--text-dark); margin-bottom: 0.5rem;">' + district + '</div>' +
+                '<div style="color: var(--text-light); font-size: 0.9rem;">عدد المستخدمين: ' + count + '</div>' +
+            '</div>' +
+            '<div style="font-size: 2rem; font-weight: 700; color: var(--primary-color);">' + percentage + '%</div>' +
+        '</div>';
+    });
+
+    content.innerHTML =
+        '<div style="display: grid; gap: 2rem;">' +
+            '<div class="settings-section">' +
+                '<h2 class="settings-title">' +
+                    '<i class="fas fa-chart-bar"></i> تقارير وتحليلات شاملة' +
+                '</h2>' +
+                '<div class="stats-grid" style="margin-bottom: 2rem;">' +
+                    '<div class="stat-card">' +
+                        '<div class="stat-icon">👥</div>' +
+                        '<div class="stat-title">إجمالي المستخدمين</div>' +
+                        '<div class="stat-value">' + stats.totalUsers + '</div>' +
+                    '</div>' +
+                    '<div class="stat-card">' +
+                        '<div class="stat-icon">✅</div>' +
+                        '<div class="stat-title">تم الانتخاب</div>' +
+                        '<div class="stat-value">' + stats.voted + '</div>' +
+                    '</div>' +
+                    '<div class="stat-card">' +
+                        '<div class="stat-icon">⏳</div>' +
+                        '<div class="stat-title">لم ينتخب</div>' +
+                        '<div class="stat-value">' + stats.notVoted + '</div>' +
+                    '</div>' +
+                    '<div class="stat-card">' +
+                        '<div class="stat-icon">📊</div>' +
+                        '<div class="stat-title">نسبة الانتخاب</div>' +
+                        '<div class="stat-value">' + (stats.totalUsers > 0 ? Math.round((stats.voted / stats.totalUsers) * 100) : 0) + '%</div>' +
+                    '</div>' +
+                '</div>' +
+                '<h3 style="color: var(--primary-color); margin: 2rem 0 1rem;">التوزيع حسب المرشح</h3>' +
+                '<div style="display: grid; gap: 1rem;">' + candidateStatsHtml + '</div>' +
+                '<h3 style="color: var(--primary-color); margin: 2rem 0 1rem;">التوزيع حسب القضاء</h3>' +
+                '<div style="display: grid; gap: 1rem;">' + districtStatsHtml + '</div>' +
+            '</div>' +
+        '</div>';
 }
 
 function loadSettingsPage() {
     const content = document.getElementById('settingsContent');
     content.classList.add('active');
     
-    content.innerHTML = `
-        <div style="display: grid; gap: 2rem;">
-            <div class="settings-section">
-                <h2 class="settings-title">
-                    <i class="fas fa-user-tie"></i> إدارة المرشحين
-                </h2>
-                <div class="candidate-list" id="candidateList"></div>
-            </div>
-            
-            <div class="settings-section">
-                <h2 class="settings-title">
-                    <i class="fas fa-database"></i> إدارة البيانات
-                </h2>
-                <div style="display: grid; gap: 1rem;">
-                    <button class="filter-btn filter-btn-apply" onclick="exportData()" style="width: 100%;">
-                        <i class="fas fa-download"></i> تصدير البيانات
-                    </button>
-                    <button class="filter-btn filter-btn-reset" onclick="backupData()" style="width: 100%;">
-                        <i class="fas fa-cloud-upload-alt"></i> نسخ احتياطي
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
+    content.innerHTML =
+        '<div style="display: grid; gap: 2rem;">' +
+            '<div class="settings-section">' +
+                '<h2 class="settings-title">' +
+                    '<i class="fas fa-user-tie"></i> إدارة المرشحين' +
+                '</h2>' +
+                '<div class="candidate-list" id="candidateList"></div>' +
+            '</div>' +
+            '<div class="settings-section">' +
+                '<h2 class="settings-title">' +
+                    '<i class="fas fa-database"></i> إدارة البيانات' +
+                '</h2>' +
+                '<div style="display: grid; gap: 1rem;">' +
+                    '<button class="filter-btn filter-btn-apply" onclick="exportData()" style="width: 100%;">' +
+                        '<i class="fas fa-download"></i> تصدير البيانات' +
+                    '</button>' +
+                    '<button class="filter-btn filter-btn-reset" onclick="backupData()" style="width: 100%;">' +
+                        '<i class="fas fa-cloud-upload-alt"></i> نسخ احتياطي' +
+                    '</button>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
     
     loadCandidateList();
 }
@@ -1215,32 +1126,32 @@ function loadCandidateList() {
     const candidateList = document.getElementById('candidateList');
     if (!candidateList) return;
     
-    candidateList.innerHTML = Object.values(candidatesData).map(candidate => `
-        <div class="candidate-card">
-            <div class="candidate-info">
-                <div class="candidate-avatar">${candidate.name.charAt(0)}</div>
-                <div class="candidate-details">
-                    <h4>${candidate.name}</h4>
-                    <p>الرمز: ${candidate.password}</p>
-                </div>
-            </div>
-            <div class="candidate-actions">
-                <button class="icon-btn icon-btn-edit" onclick="editCandidate('${candidate.id}')" title="تعديل">
-                    <i class="fas fa-edit"></i>
-                </button>
-            </div>
-        </div>
-    `).join('');
+    candidateList.innerHTML = Object.values(candidatesData).map(function(candidate) {
+        return '<div class="candidate-card">' +
+            '<div class="candidate-info">' +
+                '<div class="candidate-avatar">' + candidate.name.charAt(0) + '</div>' +
+                '<div class="candidate-details">' +
+                    '<h4>' + candidate.name + '</h4>' +
+                    '<p>الرمز: ' + candidate.password + '</p>' +
+                '</div>' +
+            '</div>' +
+            '<div class="candidate-actions">' +
+                '<button class="icon-btn icon-btn-edit" onclick="editCandidate(\'' + candidate.id + '\')" title="تعديل">' +
+                    '<i class="fas fa-edit"></i>' +
+                '</button>' +
+            '</div>' +
+        '</div>';
+    }).join('');
 }
 
 function editCandidate(candidateId) {
     const candidate = candidatesData[candidateId];
     if (!candidate) return;
     
-    const newPassword = prompt(`أدخل الرمز السري الجديد للمرشح: ${candidate.name}`, candidate.password);
+    const newPassword = prompt('أدخل الرمز السري الجديد للمرشح: ' + candidate.name, candidate.password);
     if (!newPassword) return;
     
-    database.ref(`candidates/${candidateId}/password`).set(newPassword)
+    database.ref('candidates/' + candidateId + '/password').set(newPassword)
         .then(() => {
             showAlert('تم تحديث الرمز السري بنجاح', 'success');
             loadCandidateList();
@@ -1264,7 +1175,7 @@ function exportData() {
     
     const link = document.createElement('a');
     link.href = url;
-    link.download = `asas-iraq-backup-${Date.now()}.json`;
+    link.download = "asas-iraq-backup-" + Date.now() + ".json";
     link.click();
     
     URL.revokeObjectURL(url);
