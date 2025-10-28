@@ -14,50 +14,59 @@
 const styleHeader = document.createElement('style');
 styleHeader.innerHTML = `
 @media (max-width: 600px) {
-    .app-header {
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center !important;
-        justify-content: flex-start !important;
-        padding: 16px 10px !important;
-        font-size: 1.1rem !important;
-        min-width: 100vw !important;
-        background: var(--primary, #1a7b7f) !important;
-        box-shadow: 0 2px 12px rgba(26,123,127,0.10);
-        gap: 12px !important;
-    }
-    .notification-bell, .notificationCount, .notification-icon {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        font-size: 1.7rem !important;
-        min-width: 40px !important;
-        min-height: 40px !important;
-        padding: 8px !important;
-        margin-left: 0 !important;
-        margin-right: 8px !important;
-        background: #fff !important;
-        color: #1a7b7f !important;
-        border-radius: 50% !important;
-        box-shadow: 0 2px 8px rgba(26,123,127,0.10);
-        cursor: pointer !important;
-        transition: box-shadow 0.2s;
-    }
-    .app-header-title, .header-title {
-        display: block !important;
-        font-size: 1.1rem !important;
-        font-weight: 700 !important;
-        color: #fff !important;
-        margin-right: 8px !important;
-        margin-left: 8px !important;
-        letter-spacing: 0.5px !important;
-    }
-    /* إخفاء النصوص غير المطلوبة فقط */
-    .app-header-row, .app-title-main, .app-subtitle-main, .user-role, .user-name, .user-type-label, .user-info, .user-avatar, .header-left {
-        display: none !important;
-    }
-    .sidebar-menu-btn, .sidebar-menu, .menu-toggle {
-        font-size: 1.3rem !important;
+    displayedUsers = {};
+    let votedCount = 0;
+    let notVotedCount = 0;
+    Object.values(filteredUsers).forEach(user => {
+        let match = true;
+        // فلترة حسب المرشح
+        if (candidateFilter) {
+            if (
+                !(user.candidateId === candidateFilter ||
+                  (user.candidate && candidatesData[candidateFilter] && user.candidate === candidatesData[candidateFilter].name))
+            ) {
+                match = false;
+            }
+        }
+        if (districtFilter && user.district !== districtFilter) match = false;
+        if (genderFilter && user.gender !== genderFilter) match = false;
+        if (parentFilter && user.parent !== parentFilter) match = false;
+
+        // تحديد حالة الانتخاب بدقة (بيانات مكتملة وصورة انتخاب وصورة ملف شخصي)
+        const hasVoted = (
+            user.images && typeof user.images.front === 'string' && user.images.front.trim() !== '' &&
+            user.profileImg && user.profileImg.trim() !== '' &&
+            user.fullName && user.fullName.trim() !== '' &&
+            user.phone && user.phone.trim() !== '' &&
+            user.candidate && user.candidate.trim() !== '' &&
+            user.district && user.district.trim() !== '' &&
+            user.parent && user.parent.trim() !== '' &&
+            user.school && user.school.trim() !== '' &&
+            user.gender && user.gender.trim() !== '' &&
+            user.stationNumber && user.stationNumber.trim() !== '' &&
+            user.createdAt && user.updatedAt
+        );
+
+        if (votedFilter === 'voted') {
+            // فقط البطاقة المكتملة تمامًا تظهر
+            if (match && hasVoted) {
+                displayedUsers = {};
+                displayedUsers[user.phone] = user;
+                votedCount = 1;
+                notVotedCount = 0;
+            }
+        } else if (votedFilter === 'not-voted') {
+            // جميع المستخدمين الذين لا تظهر عليهم شارة "تم الانتخاب"
+            if (match && !hasVoted) {
+                displayedUsers[user.phone] = user;
+                notVotedCount++;
+            }
+        } else if (!votedFilter && match) {
+            displayedUsers[user.phone] = user;
+            if (hasVoted) votedCount++;
+            else notVotedCount++;
+        }
+    });
         min-width: 36px !important;
         min-height: 36px !important;
         padding: 6px !important;
@@ -287,6 +296,7 @@ function loadData() {
     database.ref('users').on('value', (snapshot) => {
         allUsers = snapshot.val() || {};
         filterUsersByAuth();
+        updateFilterSelects(); // تحديث الفلاتر بعد تحميل المستخدمين
         updateUI();
         showLoading(false);
     });
@@ -383,6 +393,34 @@ function updateFilterSelects() {
             filterDistrict.appendChild(option);
         });
     }
+
+        // Update Parent (ركيزة) Filter
+        const filterParent = document.getElementById('filterParent');
+        if (filterParent) {
+            filterParent.innerHTML = '<option value="">الكل</option>';
+            // استخراج جميع أسماء الركائز من المستخدمين في قاعدة البيانات
+            const parentsSet = new Set();
+            Object.values(allUsers).forEach(user => {
+                if (user.parent && typeof user.parent === 'string' && user.parent.trim() !== '') {
+                    parentsSet.add(user.parent.trim());
+                }
+            });
+            // ترتيب الركائز أبجدياً لسهولة البحث
+            const sortedParents = Array.from(parentsSet).sort();
+            if (sortedParents.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'لا توجد ركائز';
+                filterParent.appendChild(option);
+            } else {
+                sortedParents.forEach(parent => {
+                    const option = document.createElement('option');
+                    option.value = parent;
+                    option.textContent = parent;
+                    filterParent.appendChild(option);
+                });
+            }
+        }
 }
 
 // Calculate Statistics
@@ -699,14 +737,45 @@ function filterBy(type) {
             break;
         case 'voted':
             displayedUsers = {};
-            users.filter(u => u.images && u.images.front).forEach(u => {
-                displayedUsers[u.phone] = u;
+            users.forEach(u => {
+                const hasVoted = (
+                    u.images && typeof u.images.front === 'string' && u.images.front.trim() !== '' &&
+                    u.profileImg && u.profileImg.trim() !== '' &&
+                    u.fullName && u.fullName.trim() !== '' &&
+                    u.phone && u.phone.trim() !== '' &&
+                    u.candidate && u.candidate.trim() !== '' &&
+                    u.district && u.district.trim() !== '' &&
+                    u.parent && u.parent.trim() !== '' &&
+                    u.school && u.school.trim() !== '' &&
+                    u.gender && u.gender.trim() !== '' &&
+                    u.stationNumber && u.stationNumber.trim() !== '' &&
+                    u.createdAt && u.updatedAt
+                );
+                if (hasVoted) {
+                    displayedUsers[u.phone] = u;
+                }
             });
             break;
         case 'not-voted':
             displayedUsers = {};
-            users.filter(u => !u.profileImg || u.profileImg.trim() === "").forEach(u => {
-                displayedUsers[u.phone] = u;
+            users.forEach(u => {
+                // مستخدم جديد: يملك صورة انتخاب وبيانات أساسية لكن لا يملك صورة ملف شخصي
+                const isNewUser = (
+                    u.images && typeof u.images.front === 'string' && u.images.front.trim() !== '' &&
+                    (!u.profileImg || u.profileImg.trim() === '') &&
+                    u.fullName && u.fullName.trim() !== '' &&
+                    u.phone && u.phone.trim() !== '' &&
+                    u.candidate && u.candidate.trim() !== '' &&
+                    u.district && u.district.trim() !== '' &&
+                    u.parent && u.parent.trim() !== '' &&
+                    u.school && u.school.trim() !== '' &&
+                    u.gender && u.gender.trim() !== '' &&
+                    u.stationNumber && u.stationNumber.trim() !== '' &&
+                    u.createdAt && u.updatedAt
+                );
+                if (isNewUser) {
+                    displayedUsers[u.phone] = u;
+                }
             });
             break;
         case 'male':
@@ -758,8 +827,12 @@ function applyFilters() {
     const districtFilter = document.getElementById('filterDistrict').value;
     const genderFilter = document.getElementById('filterGender').value;
     const votedFilter = document.getElementById('filterVoted').value;
-    
+    const parentFilter = document.getElementById('filterParent').value;
+
+
     displayedUsers = {};
+    let votedCount = 0;
+    let notVotedCount = 0;
     Object.values(filteredUsers).forEach(user => {
         let match = true;
         // فلترة حسب المرشح
@@ -773,13 +846,61 @@ function applyFilters() {
         }
         if (districtFilter && user.district !== districtFilter) match = false;
         if (genderFilter && user.gender !== genderFilter) match = false;
-        if (votedFilter === 'voted' && (!user.images || !user.images.front)) match = false;
-        if (votedFilter === 'not-voted' && (user.images && user.images.front)) match = false;
-        if (match) {
+        if (parentFilter && user.parent !== parentFilter) match = false;
+
+        // تحديد حالة الانتخاب بدقة (مكتمل: كل الحقول الأساسية وصورة انتخاب وصورة ملف شخصي)
+        const hasVoted = (
+            user.images && typeof user.images.front === 'string' && user.images.front.trim() !== '' &&
+            user.profileImg && user.profileImg.trim() !== '' &&
+            user.fullName && user.fullName.trim() !== '' &&
+            user.phone && user.phone.trim() !== '' &&
+            user.candidate && user.candidate.trim() !== '' &&
+            user.district && user.district.trim() !== '' &&
+            user.parent && user.parent.trim() !== '' &&
+            user.school && user.school.trim() !== '' &&
+            user.gender && user.gender.trim() !== '' &&
+            user.stationNumber && user.stationNumber.trim() !== '' &&
+            user.createdAt && user.updatedAt
+        );
+        // مستخدم جديد: يملك صورة انتخاب وبيانات أساسية لكن لا يملك صورة ملف شخصي
+        const isNewUser = (
+            user.images && typeof user.images.front === 'string' && user.images.front.trim() !== '' &&
+            (!user.profileImg || user.profileImg.trim() === '') &&
+            user.fullName && user.fullName.trim() !== '' &&
+            user.phone && user.phone.trim() !== '' &&
+            user.candidate && user.candidate.trim() !== '' &&
+            user.district && user.district.trim() !== '' &&
+            user.parent && user.parent.trim() !== '' &&
+            user.school && user.school.trim() !== '' &&
+            user.gender && user.gender.trim() !== '' &&
+            user.stationNumber && user.stationNumber.trim() !== '' &&
+            user.createdAt && user.updatedAt
+        );
+        if (votedFilter === 'voted') {
+            if (match && hasVoted) {
+                displayedUsers[user.phone] = user;
+                votedCount++;
+            }
+        } else if (votedFilter === 'not-voted') {
+            if (match && isNewUser) {
+                displayedUsers[user.phone] = user;
+                notVotedCount++;
+            }
+        } else if (!votedFilter && match) {
             displayedUsers[user.phone] = user;
+            if (hasVoted) votedCount++;
+            else notVotedCount++;
         }
     });
-    
+
+    // عرض عدد المنتخبين وغير المنتخبين للركيزة المختارة
+    const usersTitle = document.getElementById('usersTitle');
+    if (parentFilter && usersTitle) {
+        usersTitle.innerHTML = `<i class="fas fa-users"></i> المستخدمون - الركيزة: ${parentFilter} <span style='color:green;font-weight:bold;'>منتخبين: ${votedCount}</span> <span style='color:red;font-weight:bold;'>غير منتخبين: ${notVotedCount}</span>`;
+    } else if (usersTitle) {
+        usersTitle.innerHTML = `<i class="fas fa-users"></i> المستخدمون`;
+    }
+
     const userPhones = Object.keys(displayedUsers);
     if (userPhones.length === 1) {
         viewUserDetails(userPhones[0]);

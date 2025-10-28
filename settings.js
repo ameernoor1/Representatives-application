@@ -1,13 +1,13 @@
-// Firebase Configuration (same as app.js)
-const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "messageemeapp.firebaseapp.com",
-    databaseURL: "https://messageemeapp-default-rtdb.firebaseio.com",
-    projectId: "messageemeapp",
-    storageBucket: "messageemeapp.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
-};
+// إعداد Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCcXuYS86E0VCcMzC22Rg3t9VYGPQ_MjJE",
+            authDomain: "messageemeapp.firebaseapp.com",
+            databaseURL: "https://messageemeapp-default-rtdb.firebaseio.com",
+            projectId: "messageemeapp",
+            storageBucket: "messageemeapp.appspot.com",
+            messagingSenderId: "867426696402",
+            appId: "1:867426696402:web:2c88ad0c9e1a0a6a0f8f3a"
+        };
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
