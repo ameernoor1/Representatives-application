@@ -1,3 +1,56 @@
+// دالة ضغط الصورة ورفعها (نطاق عام)
+function compressAndUploadImage(file, uploadCallback) {
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+            const MAX_WIDTH = 600; // تقليل الأبعاد قليلاً
+            const MAX_HEIGHT = 450;
+            let width = img.width;
+            let height = img.height;
+            if (width > MAX_WIDTH) {
+                height = Math.round((MAX_WIDTH / width) * height);
+                width = MAX_WIDTH;
+            }
+            if (height > MAX_HEIGHT) {
+                width = Math.round((MAX_HEIGHT / height) * width);
+                height = MAX_HEIGHT;
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // تجربة عدة مستويات جودة حتى يكون الحجم أقل من 100KB
+            function tryCompress(quality) {
+                canvas.toBlob(function(blob) {
+                    if (blob.size <= 100 * 1024 || quality <= 0.4) {
+                        uploadCallback(blob);
+                    } else {
+                        tryCompress(quality - 0.1);
+                    }
+                }, 'image/jpeg', quality);
+            }
+            tryCompress(0.8); // ابدأ بجودة ممتازة
+        };
+        img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+// إرسال رسالة واتساب لمستخدم واحد
+function sendWhatsapp(phone) {
+    const user = allUsers[phone];
+    if (!user) return;
+    var candidateName = (currentUser && currentUser.type !== 'admin' && currentUser.name) ? currentUser.name : 'السيد حسين السعبري';
+    var message = 'أهلاً وسهلاً بكم في ائتلاف أساس العراق\nالعراق هو الأساس\nندعوكم لانتخاب ' + candidateName + '\nرقم القائمة: 244 تسلسل: 1\nصوتك أمانة... شارك في صنع مستقبل أفضل لوطننا! 🇮🇶';
+    let phoneNumber = user.phone;
+    if (!phoneNumber.startsWith('964')) {
+        phoneNumber = '964' + phoneNumber.replace(/^0+/, '');
+    }
+    var whatsappUrl = 'https://wa.me/' + phoneNumber + '?text=' + encodeURIComponent(message);
+    window.open(whatsappUrl, '_blank');
+}
 // إعداد Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyCcXuYS86E0VCcMzC22Rg3t9VYGPQ_MjJE",
@@ -591,7 +644,7 @@ function updateUsersGrid() {
                         '<i class="fas ' + (hasVoted ? 'fa-check-circle' : 'fa-user-plus') + '"></i>' +
                         (hasVoted ? 'تم الانتخاب' : 'مستخدم جديد') +
                     '</span>' +
-                    (currentUser.type === 'admin' ? '<input type="checkbox" class="checkbox-select" data-phone="' + user.phone + '" onchange="toggleCardSelection(\'' + user.phone + '\')">' : '') +
+                        (currentUser.type === 'admin' ? '<input type="checkbox" class="checkbox-select" data-phone="' + user.phone + '" onchange="toggleCardSelection(\'' + user.phone + '\')"' + (selectedCards.has(user.phone) ? ' checked' : '') + '>' : '') +
                 '</div>' +
             '</div>' +
             '<div class="user-info-section">' +
@@ -613,6 +666,17 @@ function updateUsersGrid() {
         '</div>';
     }).join('');
 
+    // إضافة زر تحديد الكل بجانب زر الإرسال الجماعي
+    const bulkActions = document.querySelector('.bulk-actions');
+    if (bulkActions && !document.getElementById('selectAllBtn')) {
+        const selectAllBtn = document.createElement('button');
+        selectAllBtn.id = 'selectAllBtn';
+        selectAllBtn.className = 'bulk-btn';
+        selectAllBtn.innerHTML = '<i class="fas fa-check-double"></i> تحديد الكل';
+        selectAllBtn.style.marginLeft = '8px';
+        selectAllBtn.onclick = selectAllUsers;
+        bulkActions.insertBefore(selectAllBtn, bulkActions.firstChild);
+    }
     updateBulkActionsVisibility();
 }
 
@@ -685,8 +749,60 @@ function showAddUserModal() {
             profileImg: ''
         };
 
+        // رفع الصورة الشخصية
+        var profileImgFile = form.profileImgFile ? form.profileImgFile.files[0] : null;
+
+        function saveUserWithProfileImage(profileImgUrl) {
+            if (profileImgUrl) newUser.profileImg = profileImgUrl;
+            // ...رفع صورة الانتخاب بنفس المنطق...
+            var frontImgFile = form.frontImgFile.files[0];
+            function saveUserWithFrontImage(frontImgUrl) {
+                if (frontImgUrl) newUser.images.front = frontImgUrl;
+                database.ref('users/' + newUser.phone).set(newUser).then(() => {
+                    showAlert('تمت إضافة المستخدم بنجاح!');
+                    closeModal();
+                    loadData();
+                }).catch(err => {
+                    showAlert('حدث خطأ أثناء إضافة المستخدم: ' + err.message, 'error');
+                });
+            }
+            if (frontImgFile) {
+                compressAndUploadImage(frontImgFile, function(compressedBlob) {
+                    var frontRef = firebase.storage().ref('voteImages/' + newUser.phone + '_' + Date.now());
+                    frontRef.put(compressedBlob).then(snap => {
+                        snap.ref.getDownloadURL().then(frontImgUrl => {
+                            saveUserWithFrontImage(frontImgUrl);
+                        });
+                    }).catch(err => {
+                        showAlert('خطأ في رفع الصورة الأمامية: ' + err.message, 'error');
+                        saveUserWithFrontImage(null);
+                    });
+                });
+            } else {
+                saveUserWithFrontImage(null);
+            }
+        }
+
+        if (profileImgFile) {
+            compressAndUploadImage(profileImgFile, function(compressedBlob) {
+                var profileRef = firebase.storage().ref('profileImages/' + newUser.phone + '_' + Date.now());
+                profileRef.put(compressedBlob).then(snap => {
+                    snap.ref.getDownloadURL().then(profileImgUrl => {
+                        saveUserWithProfileImage(profileImgUrl);
+                    });
+                }).catch(err => {
+                    showAlert('خطأ في رفع الصورة الشخصية: ' + err.message, 'error');
+                    saveUserWithProfileImage(null);
+                });
+            });
+        } else {
+            saveUserWithProfileImage(null);
+        }
+
         // رفع الصورة الأمامية فقط
-        var frontImgFile = form.frontImgFile.files[0];
+                var frontImgFile = form.frontImgFile.files[0];
+
+                // دالة ضغط الصورة ورفعها
 
         function saveUserWithFrontImage(frontImgUrl) {
             if (frontImgUrl) newUser.images.front = frontImgUrl;
@@ -699,19 +815,21 @@ function showAddUserModal() {
             });
         }
 
-        if (frontImgFile) {
-            var frontRef = firebase.storage().ref('voteImages/' + newUser.phone + '_' + Date.now());
-            frontRef.put(frontImgFile).then(snap => {
-                snap.ref.getDownloadURL().then(frontImgUrl => {
-                    saveUserWithFrontImage(frontImgUrl);
-                });
-            }).catch(err => {
-                showAlert('خطأ في رفع الصورة الأمامية: ' + err.message, 'error');
-                saveUserWithFrontImage(null);
-            });
-        } else {
-            saveUserWithFrontImage(null);
-        }
+                if (frontImgFile) {
+                    compressAndUploadImage(frontImgFile, function(compressedBlob) {
+                        var frontRef = firebase.storage().ref('voteImages/' + newUser.phone + '_' + Date.now());
+                        frontRef.put(compressedBlob).then(snap => {
+                            snap.ref.getDownloadURL().then(frontImgUrl => {
+                                saveUserWithFrontImage(frontImgUrl);
+                            });
+                        }).catch(err => {
+                            showAlert('خطأ في رفع الصورة الأمامية: ' + err.message, 'error');
+                            saveUserWithFrontImage(null);
+                        });
+                    });
+                } else {
+                    saveUserWithFrontImage(null);
+                }
     };
 }
 
@@ -1181,44 +1299,94 @@ window.showEditUserModal = function(phone) {
                 nationalId: form.nationalId.value,
                 updatedAt: new Date().toISOString()
             };
-            // رفع صورة المستخدم
+
+            // رفع صورة المستخدم مع الضغط
             const profileImgFile = form.profileImgFile.files[0];
+            const frontImgFile = form.frontImgFile.files[0];
+
+            function updateUserInDB() {
+                database.ref('users/' + user.phone).update(updatedUser, function(error) {
+                    if (error) {
+                        alert('حدث خطأ أثناء حفظ التعديلات');
+                    } else {
+                        alert('تم حفظ التعديلات بنجاح');
+                        closeEditUserModal();
+                        loadData();
+                    }
+                });
+            }
+
+            // ضغط ورفع صورة الملف الشخصي
             if (profileImgFile) {
-                try {
-                    const storageRef = firebase.storage().ref();
-                    const imgRef = storageRef.child(`user-images/${user.phone}_profile_${Date.now()}`);
-                    await imgRef.put(profileImgFile);
-                    updatedUser.profileImg = await imgRef.getDownloadURL();
-                } catch (err) {
-                    alert('خطأ في رفع صورة المستخدم');
-                }
+                compressAndUploadImage(profileImgFile, async function(compressedBlob) {
+                    try {
+                        const storageRef = firebase.storage().ref();
+                        const imgRef = storageRef.child(`user-images/${user.phone}_profile_${Date.now()}`);
+                        await imgRef.put(compressedBlob);
+                        updatedUser.profileImg = await imgRef.getDownloadURL();
+                        // بعد رفع صورة الملف الشخصي، تابع رفع صورة التصويت
+                        if (frontImgFile) {
+                            compressAndUploadImage(frontImgFile, async function(compressedBlob2) {
+                                try {
+                                    const imgRef2 = storageRef.child(`user-images/${user.phone}_front_${Date.now()}`);
+                                    await imgRef2.put(compressedBlob2);
+                                    const frontUrl = await imgRef2.getDownloadURL();
+                                    updatedUser.images = { front: frontUrl };
+                                } catch (err) {
+                                    alert('خطأ في رفع صورة التصويت');
+                                    updatedUser.images = user.images || {};
+                                }
+                                updateUserInDB();
+                            });
+                        } else {
+                            updatedUser.images = user.images || {};
+                            updateUserInDB();
+                        }
+                    } catch (err) {
+                        alert('خطأ في رفع صورة المستخدم');
+                        updatedUser.profileImg = user.profileImg || '';
+                        // حتى لو فشل رفع صورة الملف الشخصي، تابع رفع صورة التصويت
+                        if (frontImgFile) {
+                            compressAndUploadImage(frontImgFile, async function(compressedBlob2) {
+                                try {
+                                    const imgRef2 = storageRef.child(`user-images/${user.phone}_front_${Date.now()}`);
+                                    await imgRef2.put(compressedBlob2);
+                                    const frontUrl = await imgRef2.getDownloadURL();
+                                    updatedUser.images = { front: frontUrl };
+                                } catch (err) {
+                                    alert('خطأ في رفع صورة التصويت');
+                                    updatedUser.images = user.images || {};
+                                }
+                                updateUserInDB();
+                            });
+                        } else {
+                            updatedUser.images = user.images || {};
+                            updateUserInDB();
+                        }
+                    }
+                });
             } else {
                 updatedUser.profileImg = user.profileImg || '';
-            }
-            // رفع صورة التصويت الأمامية
-            const frontImgFile = form.frontImgFile.files[0];
-            if (frontImgFile) {
-                try {
-                    const storageRef = firebase.storage().ref();
-                    const imgRef = storageRef.child(`user-images/${user.phone}_front_${Date.now()}`);
-                    await imgRef.put(frontImgFile);
-                    const frontUrl = await imgRef.getDownloadURL();
-                    updatedUser.images = { front: frontUrl };
-                } catch (err) {
-                    alert('خطأ في رفع صورة التصويت');
-                }
-            } else {
-                updatedUser.images = user.images || {};
-            }
-            database.ref('users/' + user.phone).update(updatedUser, function(error) {
-                if (error) {
-                    alert('حدث خطأ أثناء حفظ التعديلات');
+                // ضغط ورفع صورة التصويت فقط
+                if (frontImgFile) {
+                    compressAndUploadImage(frontImgFile, async function(compressedBlob2) {
+                        try {
+                            const storageRef = firebase.storage().ref();
+                            const imgRef2 = storageRef.child(`user-images/${user.phone}_front_${Date.now()}`);
+                            await imgRef2.put(compressedBlob2);
+                            const frontUrl = await imgRef2.getDownloadURL();
+                            updatedUser.images = { front: frontUrl };
+                        } catch (err) {
+                            alert('خطأ في رفع صورة التصويت');
+                            updatedUser.images = user.images || {};
+                        }
+                        updateUserInDB();
+                    });
                 } else {
-                    alert('تم حفظ التعديلات بنجاح');
-                    closeEditUserModal();
-                    loadData();
+                    updatedUser.images = user.images || {};
+                    updateUserInDB();
                 }
-            });
+            }
         };
 }
 
@@ -1236,6 +1404,15 @@ function viewImage(imageUrl) {
 }
 
 // Card Selection
+// تحديد جميع المستخدمين دفعة واحدة
+function selectAllUsers() {
+    selectedCards.clear();
+    Object.keys(displayedUsers).forEach(phone => {
+        selectedCards.add(phone);
+    });
+    updateBulkActionsVisibility();
+    updateUsersGrid();
+}
 function toggleCardSelection(phone) {
     if (selectedCards.has(phone)) {
         selectedCards.delete(phone);
@@ -1253,20 +1430,26 @@ function updateBulkActionsVisibility() {
 }
 
 function sendBulkWhatsapp() {
-    if (selectedCards.size === 0) return;
-    
+    // إذا لم يتم تحديد أي مستخدم، حدد جميع المستخدمين المعروضين
+    if (selectedCards.size === 0) {
+        Object.keys(displayedUsers).forEach(phone => {
+            selectedCards.add(phone);
+        });
+    }
     const users = Array.from(selectedCards).map(phone => allUsers[phone]).filter(u => u);
-    var message = 'مرحباً، نشكركم على تسجيلكم في ائتلاف أساس العراق. صوتكم اليوم مستقبلكم غداً! 🇮🇶';
-    
-    users.forEach(user => {
+    var candidateName = (currentUser && currentUser.type !== 'admin' && currentUser.name) ? currentUser.name : 'السيد حسين السعبري';
+    var message = 'أهلاً وسهلاً بكم في ائتلاف أساس العراق\nالعراق هو الأساس\nندعوكم لانتخاب ' + candidateName + '\nرقم القائمة: 244 تسلسل: 1\nصوتك أمانة... شارك في صنع مستقبل أفضل لوطننا! 🇮🇶';
+    // إرسال لجميع الأرقام دفعة واحدة (فتح جميع الروابط دفعة واحدة)
+    const urls = users.map(user => {
         let phoneNumber = user.phone;
         if (!phoneNumber.startsWith('964')) {
             phoneNumber = '964' + phoneNumber.replace(/^0+/, '');
         }
-    var whatsappUrl = 'https://wa.me/' + phoneNumber + '?text=' + encodeURIComponent(message);
-        window.open(whatsappUrl, '_blank');
+        return 'https://wa.me/' + phoneNumber + '?text=' + encodeURIComponent(message);
     });
-    
+    urls.forEach(url => {
+        window.open(url, '_blank');
+    });
     selectedCards.clear();
     updateBulkActionsVisibility();
     updateUsersGrid();
